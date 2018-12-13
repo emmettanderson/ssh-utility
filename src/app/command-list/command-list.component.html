@@ -1,0 +1,25 @@
+<div class='row'>
+  <div class='column'>
+    <mat-form-field style='width: 100%'>
+        <input matInput
+                placeholder='SSH Command'
+                #newitem (keyup.enter)='addItem(newitem)'
+                newitem.value=''
+                style='min-width:15em;'>
+        <button #addbutton mat-stroked-button matSuffix (click)='addItem(newitem)' color='primary'>Add</button>
+    </mat-form-field>
+    <div id='commandlistdiv'>
+      <mat-list dense span='margin-top:2em'>
+        <mat-list-item *ngFor='let command of CommandAry; let i=index'>
+            <span class='codestyle' style='width:100%'>{{command}}</span>
+            <span style='display: inline-flex;'>
+              <i (click)='editItem(i,command)' class='fa fa-edit'></i>
+              <i (click)='removeItem(i)' class='fa fa-remove'></i>
+            </span>
+       </mat-list-item>
+      </mat-list>
+    </div>
+
+  </div>
+</div>
+

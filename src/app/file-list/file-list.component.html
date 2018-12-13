@@ -1,0 +1,41 @@
+<div class='row'>
+  <div class='column'>
+    <mat-form-field style='width: 100%'>
+      <input matInput
+              #newSrcItem
+              placeholder='Source File (local)'
+              style='min-width:15em;'>
+    </mat-form-field>
+  </div>
+</div>
+<div class='row'>
+  <div class='column'>
+    <mat-form-field style='width: 100%'>
+      <input matInput
+              #newDestItem
+              placeholder='Destination File'
+              style='min-width:15em;'>
+    </mat-form-field>
+    <button #addbutton
+            mat-stroked-button
+            matSuffix
+            (click)='addItem(newSrcItem.value, newDestItem.value)'
+            color='primary'>Add</button>
+  </div>
+</div>
+<div class='row'>
+  <div id='filelistdiv'>
+    <mat-list dense span='margin-top:2em'>
+      <mat-list-item *ngFor='let srcfile of srcFileAry;let i=index;'>
+        <span class='codestyle' style='width:100%'>Source: {{srcfile}}</span>
+        <br/>
+        <span class='codestyle' style='width:100%'>Dest: {{destFileAry[i]}}</span>
+        <span>
+          <i (click)='editItem(i)' class='fa fa-edit'></i>
+          <i (click)='removeItem(i)' class='fa fa-remove'></i>
+        </span>
+      </mat-list-item>
+    </mat-list>
+  </div>
+</div>
+

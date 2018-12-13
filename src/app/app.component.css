@@ -1,0 +1,141 @@
+h1 {
+  font-size: 1.5em;
+  font-weight: bold;
+  text-align: center;
+  color: #3491d4;
+}
+h3 {
+  color: #3491d4;
+  text-align: center;
+}
+
+.btn {
+  margin-left: 10px;
+}
+.rowBtn {
+  float: right;
+}
+.container {
+  overflow: hidden;
+  width: 99%;
+  min-height: 5em;
+  margin:0;
+  text-overflow: normal;
+  border: 1px solid lightblue;
+  border-radius: 3px;
+  padding: 5px;
+  margin: 10px;
+  /*display: inline-block;*/
+}
+
+.column {
+  width: 100%;
+}
+
+.compleftnav {
+  width: 20%;
+  float: left;
+  padding-bottom: 500em;
+  margin-bottom: -500em;
+}
+.listcontainer {
+  width: 100%;
+  float: left;
+  padding-bottom: 500em;
+  margin-bottom: -500em;
+  margin-right: -1px; /* Thank you IE */
+  white-space: pre-wrap;
+}
+.row {
+  margin: 0;
+}
+.compleft {
+  width: 40%;
+  float: left;
+  padding-bottom: 500em;
+  margin-bottom: -500em;
+}
+
+#filelistdiv div {
+  display: inline-block !important;
+}
+.codestyle {
+  font-family: 'Courier New', Courier, monospace;
+  font-weight: 600;
+}
+
+.compright {
+  width: 60%;
+  float: left;
+  padding-bottom: 500em;
+  margin-bottom: -500em;
+  margin-right: -1px; /* Thank you IE */
+}
+
+@media only screen and (max-width: 1200px)
+{
+    .compleft, .compright
+    {
+        display: block;
+        float: none;
+        width: 100%;
+        padding: 5px 0;
+    }
+}
+
+.complist {
+  margin: 0 0 2em 0;
+  list-style-type: none;
+  padding: 0;
+  width: auto;
+}
+
+.complist li {
+  cursor: pointer;
+  display: inline-block;
+  width: 98%;
+  /*
+  position: relative;
+  left: 0;
+  */
+  background-color: #EEE;
+  margin: .2em;
+  padding: .2em;
+  /*height: 1.3em;*/
+  border-radius: 4px;
+}
+.complist li.selected:hover {
+  background-color: #BBD8DC !important;
+  color: white;
+}
+.complist li span {
+  padding-right: .3em;
+  padding-left: .3em;
+  display: inline-block;
+}
+.complist li:hover {
+  color: #607D8B;
+  background-color: #DDD;
+  left: .1em;
+}
+input {
+  width:90%;
+}
+.complist .text {
+  position: relative;
+  /*top: -3px;*/
+}
+.complist .badge {
+  display: inline-block;
+  font-size: small;
+  color: white;
+  padding: 0.8em 0.7em 0 0.7em;
+  background-color: #607D8B;
+  line-height: 1em;
+  position: relative;
+  left: -1px;
+  top: -4px;
+  height: 1.8em;
+  margin-right: .8em;
+  border-radius: 4px 0 0 4px;
+}

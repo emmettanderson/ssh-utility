@@ -1,7 +1,7 @@
 import { HistoryListInt } from '../history-list/history-list.component';
 
 export class HistoryList implements HistoryListInt {
-  id: number;
+  rowId: string;
   logDate: string;
   logTime: string;
   description: string;

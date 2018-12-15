@@ -9,30 +9,26 @@ import {
   HttpRequest,
   HttpHeaders
 } from '@angular/common/http';
-import { Observable} from 'rxjs';
 import { Injectable } from '@angular/core';
-
 import { ApiService } from './api.service';
-import { HistoryListApiConfig } from './api.config';
-import { HistoryList } from '../models/history-list';
+import { OutputDisplayApiConfig } from './api.config';
 import { ApiConfig } from './api.config';
+import { SessionLog } from '../models/submit.model';
 
 @Injectable({
   providedIn: 'root'
 })
-export class HistoryListService {
+
+export class OutputDisplayService {
   private actionUrl: string;
-
-  public HistoryList: HistoryList;
-  // public HostName: HistoryList['HostName'];
-
+  SessionLog: SessionLog;
   private errorHandler: ApiService['handleError'];
 
   constructor(
     private http: HttpClient,
-    public _HistoryListApiConfig: HistoryListApiConfig,
+    public _OutputDisplayApiConfig: OutputDisplayApiConfig,
     public _apiConfig: ApiConfig,
-  ) { this.actionUrl = _HistoryListApiConfig.RestApiUrl; }
+  ) { this.actionUrl = _OutputDisplayApiConfig.RestApiUrl; }
 
   public _headers = {
     headers: new HttpHeaders()
@@ -41,14 +37,11 @@ export class HistoryListService {
       // .append('Content-Type', 'text/html')
   };
 
-  public getHistoryList(RowId): Observable<HistoryList[]> {
-    let remove = '';
-    if (RowId !== '') {
-      remove = 'remove/' + RowId;
-    }
-    console.log('getHistoryList service url: ' + this.actionUrl + remove);
+  public getSessionLog(logRowId) {
+    console.log('getSessionLog: ' + logRowId);
     return this.http
-      .get<HistoryList[]>(this.actionUrl + remove, this._headers)
+      .get<SessionLog>(this.actionUrl + logRowId, this._headers)
       .catch(this.errorHandler);
   }
 }
+

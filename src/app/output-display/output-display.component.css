@@ -1,0 +1,6 @@
+#sessionlogdiv {
+  height: 300px;
+  max-height: 400px;
+  overflow: auto;
+  font-size: .8em;
+}

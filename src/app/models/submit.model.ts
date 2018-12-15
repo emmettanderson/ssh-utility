@@ -1,5 +1,7 @@
+import { SessionLogInt } from '../output-display/output-display.component';
+
 export class SubmitList {
-  id: number;
+  RowId: string;
   LogDate: string;
   LogTime: string;
   Description: string;
@@ -7,4 +9,9 @@ export class SubmitList {
   SourceFileList: string;
   DestinationFileList: string;
   TargetGroup: string;
+}
+
+export class SessionLog implements SessionLogInt {
+  ProcessComplete: number | string;
+  SessionLog: string;
 }

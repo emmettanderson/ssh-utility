@@ -49,8 +49,8 @@ export class TargetListService {
   public getTargetGroupList() {
     console.log('getTargetGroupList service headers: ' + this._headers);
     return this.http
-      .get<TargetGroupList>(this.actionUrl, this._headers);
-      // .catch(this.errorHandler);
+      .get<TargetGroupList>(this.actionUrl, this._headers)
+      .catch(this.errorHandler);
   }
   public setTargetGroup(GroupName) {
     this.GroupName = GroupName;
@@ -58,8 +58,8 @@ export class TargetListService {
   public getTargetList(GroupName) {
     console.log('getTargetList service url: ' + this.actionUrl + GroupName);
     return this.http
-      .get<TargetList>(this.actionUrl + GroupName, this._headers);
-      // .catch(this.errorHandler);
+      .get<TargetList>(this.actionUrl + GroupName, this._headers)
+      .catch(this.errorHandler);
   }
 }
 

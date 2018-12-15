@@ -1,15 +1,23 @@
 <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css'>
 <div class='stickyheader'>
-  <h1 style='text-align: left;font-size:1em; float: right; margin-left: 10px;margin-right: 30px; margin-top: 6px;'>{{title}}
-      <input matInput
-      placeholder='Description'
-      #description
-      style='min-width:15em;'>
-    <button mat-raised-button
-            color='primary'
-            (click)='submit($event)'>Submit
-    </button>
-  </h1>
+    <h1 style='text-align: left;font-size:1em;width:100px;'>{{title}}</h1>
+  <div style='position: relative;top: -20px;left: -85px;text-align: left;font-size:1em; float: right; margin-left: 10px;margin-right: 30px; margin-top: 6px;'>
+    <ul style='list-style-type: none;'>
+      <li>
+        <mat-form-field class='example-full-width'>
+          <input matInput dense
+          placeholder='Description'
+          #description>
+        </mat-form-field>
+        <button
+          mat-raised-button
+          style='margin-left: 10px; vertical-align: top;'
+          color='primary'
+          (click)='submit($event)'>Submit
+      </button>
+      </li>
+    </ul>
+  </div>
 </div>
 <div style='margin-top:50px'>
   <div class='compleft'>
@@ -41,6 +49,13 @@
       </app-history-list>
     </div>
   </div>
+  <div class='container'>
+      <app-output-display
+        [LogRowId]='LogRowId'
+        [SessionLogText]='SessionLog'
+        [SessionLogCounter]='SessionLogCounter'
+        [ProcessComplete]='ProcessComplete'
+        (sendDataToParent)='updateSessionLog($event)'>
+      </app-output-display>
+    </div>
 </div>
-
-

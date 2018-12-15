@@ -18,6 +18,7 @@
   height: 50px;
   width: 100%;
   z-index: 9999;
+  white-space: nowrap;
 }
 
 h1 {
@@ -94,18 +95,32 @@ nav a.active {
 tr.mat-header-row {
   height: 30px !important;
 }
+tr.mat-row {
+  height: 50px !important;
+}
 .mat-input {
   font-size: .75em !important;
 }
+td.mat-cell span {
+  display: block;
+  max-height: 50px !important;
+}
 .mat-cell {
+  max-width: 200px;
+  max-height: 50px !important;
+  overflow-x: hidden !important;
+  overflow-y: hidden !important;
+  text-overflow: ellipsis;
   font-size: .75em !important;
   padding: 5px !important;
+  /*word-break: break-all;*/
 }
 .mat-select {
   width: 98% !important;
   /*width: auto !important;*/
   border-color: #007bff !important;
 }
+
 .mat-list-item {
   border-bottom: 1px solid lightgrey;
   padding-top: 2px;

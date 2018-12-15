@@ -1,3 +1,19 @@
-<p>
-  output-display works!
-</p>
+<div class='listcontainer'>
+  <button mat-raised-button
+          style='margin: 10px'
+          color='primary'
+          (click)='openModalDialog()'>
+          Open Modal
+  </button>
+  <div id='sessionlogdiv' #sessionlogdiv>
+    <span>Session Log</span>
+    <span class='codestyle'>{{SessionLogText}}</span>
+  </div>
+</div>
+<div *ngIf='showModal'>
+  <!--<app-output-display-modal
+    [SessionLogText]='SessionLogText'
+    (sendDataToChild)='updateModalComponent($event)'>
+  </app-output-display-modal>
+  -->
+</div>

@@ -1,15 +1,5 @@
 import { Component, OnInit, ViewEncapsulation, EventEmitter, OnChanges, SimpleChange, Input, Output } from '@angular/core';
 import { TargetListService } from '../api/target-list.service';
-/*
-import { TargetGroupList, TargetList} from '../models/target-list.model';
-import { SelectionModel } from '@angular/cdk/collections';
-import { MatTableDataSource, MatPaginator, MatSort, MatList} from '@angular/material';
-import { ActivatedRoute, ParamMap } from '@angular/router';
-import { switchMap } from 'rxjs/operators';
-import { Observable } from 'rxjs';
-import 'rxjs/add/observable/of';
-import { FormGroupName } from '@angular/forms';
-*/
 
 export interface TargetGroupListInt {
   id: number;
@@ -38,6 +28,7 @@ export class TargetListComponent implements OnInit, OnChanges {
 
   @Input() GroupName: string;
   @Output() sendDataToParent = new EventEmitter<string>();
+
   constructor(
     private _targetListService: TargetListService
   ) { }
@@ -48,20 +39,6 @@ export class TargetListComponent implements OnInit, OnChanges {
     if (typeof changes['GroupName'].currentValue !== 'undefined') {
       this.onChangeTargetGroupHandler(changes['GroupName'].currentValue);
     }
-
-    // tslint:disable-next-line:forin
-    for (const propName in changes) {
-      const changedProp = changes[propName];
-      const to = JSON.stringify(changedProp.currentValue);
-      if (changedProp.isFirstChange()) {
-        log.push('Initial value of ' + propName + ' set to ' + to);
-      } else {
-        const from = JSON.stringify(changedProp.previousValue);
-        log.push(propName + ' changed from ' + from + ' to ' +  to);
-      }
-    }
-    this.changeLog.push(log.join(', '));
-    console.log('change log: ' + this.changeLog.toString());
   }
 
   ngOnInit() {
@@ -90,7 +67,6 @@ export class TargetListComponent implements OnInit, OnChanges {
     this._targetListService.getTargetList(GroupName).subscribe(Targets => {
       this.targets = Targets;
     });
-    // console.log('getTargetList targets array: ' + this.targets);
     const targetlist = document.getElementById('targetlistdiv');
     targetlist.style.display = 'inline';
   }

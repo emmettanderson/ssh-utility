@@ -38,6 +38,11 @@ export class SubmitListApiConfig {
 }
 
 @Injectable({ providedIn: 'root' })
+export class OutputDisplayApiConfig {
+  public RestApi = '/csp/rest/sshtools/getsessionlog/';
+  public RestApiUrl = API_URL + this.RestApi;
+}
+@Injectable({ providedIn: 'root' })
 export class ApiConfig {
   // janderson
   public UserPassBasic = 'Basic amFuZGVyc29uOmRlbW8=';

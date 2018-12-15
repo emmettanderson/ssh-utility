@@ -11,7 +11,7 @@
     <div id='commandlistdiv'>
       <mat-list dense span='margin-top:2em'>
         <mat-list-item *ngFor='let command of CommandAry; let i=index'>
-            <span class='codestyle' style='width:100%'>{{command}}</span>
+            <span class='codestyle' style='width:90%; word-wrap: break-word;'>{{command}}</span>
             <span style='display: inline-flex;'>
               <i (click)='editItem(i,command)' class='fa fa-edit'></i>
               <i (click)='removeItem(i)' class='fa fa-remove'></i>

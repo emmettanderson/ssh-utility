@@ -3,21 +3,13 @@ import { SimpleChange, OnChanges, AfterViewInit, EventEmitter, Output } from '@a
 import { HistoryListService } from '../api/history-list.service';
 import { TargetListComponent } from '../target-list/target-list.component';
 import { HistoryList} from '../models/history-list';
-import { SelectionModel } from '@angular/cdk/collections';
+import { SelectionModel, DataSource } from '@angular/cdk/collections';
 import { MatTableDataSource, MatPaginator, MatSort } from '@angular/material';
 import { Observable } from 'rxjs/Observable';
 import 'rxjs/add/observable/of';
 
-/*
-import { ActivatedRoute, ParamMap } from '@angular/router';
-import { switchMap } from 'rxjs/operators';
-import { DataService } from '../api/data.service';
-import { DataSource } from '@angular/cdk/collections';
-import { MatPaginator, MatSort, MatTableDataSource } from '@angular/material';
-*/
-
 export interface HistoryListInt {
-  id: number;
+  rowId: string;
   logDate: string;
   logTime: string;
   description: string; // need to add to table
@@ -38,15 +30,13 @@ export class HistoryListComponent implements OnInit, AfterViewInit, OnChanges {
   Title = 'History List';
   public actionUrl: string;
   public histories: Observable<HistoryList[]>;
-  private selectedRowId: number | string;
+  private selectedRowId: number;
   public targetlist: TargetListComponent;
   groupName: string;
   message: any = [];
 
-  public displayedColumns: string[] = ['logDate', 'commandList', 'srcFileList', 'destFileList', 'targetGroup'];
-  dataSource: MatTableDataSource<HistoryListInt> = new MatTableDataSource([]);
-
-  selection = new SelectionModel<HistoryListInt>(false, []);
+  public displayedColumns: string[] = ['logDate', 'commandList', 'srcFileList', 'destFileList', 'targetGroup', 'removeRecord'];
+  dataSource: MatTableDataSource<HistoryListInt> = new MatTableDataSource();
 
   @ViewChild(MatPaginator) paginator: MatPaginator;
   @ViewChild(MatSort) sort: MatSort;
@@ -55,28 +45,31 @@ export class HistoryListComponent implements OnInit, AfterViewInit, OnChanges {
 
   constructor(
     private _historyListService: HistoryListService
-  ) {}
+  ) {
+    this._historyListService.getHistoryList('').subscribe((histories: HistoryList[]) => {
+      this.dataSource = new MatTableDataSource(histories);
+     });
+  }
 
   ngOnChanges(changes: {[propKey: string]: SimpleChange}) {
-    console.log('change log: ' + changes['submitted'].currentValue);
+    console.log('History List change log: ' + changes['submitted'].currentValue);
     if (typeof changes['submitted'].currentValue !== 'undefined') {
       if ( changes['submitted'].currentValue !== changes['submitted'].previousValue) {
-        return this._historyListService.getHistoryList(0).subscribe((histories: HistoryList[]) => {
-          this.dataSource = new MatTableDataSource(histories);
-          this.dataSource.paginator = this.paginator;
-          this.dataSource.sort = this.sort;
+        this._historyListService.getHistoryList('').subscribe((histories: HistoryList[]) => {
+         this.dataSource = new MatTableDataSource(histories);
+         this.dataSource.paginator = this.paginator;
+         this.dataSource.sort = this.sort;
         });
       }
     }
   }
   public ngOnInit() {
     // Get Hospital drop-down contents
-    this._historyListService.getHistoryList(this.selectedRowId).subscribe((histories: HistoryList[]) => {
+    this._historyListService.getHistoryList('').subscribe((histories: HistoryList[]) => {
       this.dataSource = new MatTableDataSource(histories);
+      this.dataSource.paginator = this.paginator;
+      this.dataSource.sort = this.sort;
     });
-
-    this.dataSource.paginator = this.paginator;
-    this.dataSource.sort = this.sort;
 
     /*
     this.histories = this.route.paramMap.pipe(
@@ -91,8 +84,8 @@ export class HistoryListComponent implements OnInit, AfterViewInit, OnChanges {
   }
 
   ngAfterViewInit() {
-    // this.targetlist = new TargetListComponent(this._targetListService);
     this.dataSource.sort = this.sort;
+    this.dataSource.paginator = this.paginator;
     this.dataSource.sortingDataAccessor = (data, header) => data[header];
   }
 
@@ -109,20 +102,32 @@ export class HistoryListComponent implements OnInit, AfterViewInit, OnChanges {
         console.log('History List selectRow: destFileList = ' + row.destFileList);
       }
   }
+  removeRecord(event, RowId) {
+    this._historyListService.getHistoryList(RowId).subscribe((histories: HistoryList[]) => {
+      this.dataSource = new MatTableDataSource(histories);
+      this.dataSource.paginator = this.paginator;
+      this.dataSource.sort = this.sort;
+    });
+    event.stopPropagation();
+  }
   /** Whether the number of selected elements matches the total number of rows. */
   isAllSelected() {
+    /*
     const numSelected = this.selection.selected.length;
     const numRows = this.dataSource.data.length;
     // const numRows = 10;
     return numSelected === numRows;
+    */
   }
 
   /** Selects all rows if they are not all selected; otherwise clear selection. */
+  /*
   masterToggle() {
     this.isAllSelected() ?
         this.selection.clear() :
         this.dataSource.data.forEach(row => this.selection.select(row));
   }
+  */
   /*
   public getHistoryList() {
     console.log('onClickGetHistoryList');

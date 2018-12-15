@@ -4,6 +4,7 @@ import { CommandList } from './models/command-list.model';
 import { FileList, FileArray } from './models/file-list.model';
 import { SubmitService } from './api/submit.service';
 import { SubmitList } from './models/submit.model';
+import { Observable, Subject } from 'rxjs';
 
 // import { MatButton } from '@angular/material';
 
@@ -15,7 +16,11 @@ import { SubmitList } from './models/submit.model';
 export class AppComponent implements OnInit {
   title = 'SSH Tool';
   response: any;
-
+  sessionLog: Observable<string>;
+  public LogRowId: string;
+  SessionLog: any;
+  SessionLogCounter: number;
+  ProcessComplete: any;
   GroupName: string;
   CommandList: string;
   SrcFileList: string;
@@ -60,7 +65,12 @@ export class AppComponent implements OnInit {
       this.SubmitList.CommandStringList += command;
     }
   }
-
+  updateSessionLog(comp) {
+    this.SessionLog = comp.SessionLog.SessionLog;
+    this.ProcessComplete = comp.SessionLog.ProcessComplete;
+    this.LogRowId = comp.LogRowId;
+    console.log('updateSessionLog counter: ' + this.SessionLogCounter);
+  }
   updateFileList(fileAry: FileArray) {
     this.SubmitList.SourceFileList = fileAry.srcFileAry.join('\n');
     this.SubmitList.DestinationFileList = fileAry.destFileAry.join('\n');
@@ -73,11 +83,9 @@ export class AppComponent implements OnInit {
   submit(e) {
     console.log('submit: ' + this.SubmitList);
     this.SubmitList.Description = this.description.nativeElement.value;
-    this.response = [];
-    this._submitService.submitList(this.SubmitList).subscribe( resp => {
-      console.log('submit service response: ' + resp);
-      this.response = resp;
-    });
+    this._submitService.submitList(this.SubmitList).subscribe(data => {
+        this.LogRowId = data;
+      });
     this.Submitted = new Date();
   }
 }

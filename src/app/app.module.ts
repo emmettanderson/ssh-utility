@@ -11,6 +11,7 @@ import { MatTableModule,
          MatListModule,
          MatIconModule,
          MatSelectModule,
+         MatDialogModule,
          MatButtonModule} from '@angular/material';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { NgSelectModule } from '@ng-select/ng-select';
@@ -25,7 +26,8 @@ import { TargetListComponent } from './target-list/target-list.component';
 import { HistoryListComponent } from './history-list/history-list.component';
 import { CommandListComponent } from './command-list/command-list.component';
 import { FileListComponent } from './file-list/file-list.component';
-import { OutputDisplayComponent } from './output-display/output-display.component';
+// import { OutputDisplayComponent } from './output-display/output-display.component';
+import { OutputDisplayModalComponent, OutputDisplayComponent } from './output-display/output-display.component';
 import { DataService } from './api/data.service';
 
 @NgModule({
@@ -35,7 +37,8 @@ import { DataService } from './api/data.service';
     HistoryListComponent,
     CommandListComponent,
     FileListComponent,
-    OutputDisplayComponent
+    OutputDisplayComponent,
+    OutputDisplayModalComponent
   ],
   imports: [
     BrowserModule,
@@ -52,6 +55,7 @@ import { DataService } from './api/data.service';
     MatInputModule,
     MatCheckboxModule,
     MatIconModule,
+    MatDialogModule,
     ReactiveFormsModule,
     NgSelectModule
   ],
@@ -64,8 +68,10 @@ import { DataService } from './api/data.service';
     MatPaginatorModule,
     MatFormFieldModule,
     MatIconModule,
-    MatCheckboxModule
+    MatCheckboxModule,
+    OutputDisplayModalComponent
   ],
+  entryComponents: [OutputDisplayModalComponent],
   providers: [ApiService, DataService],
   bootstrap: [AppComponent]
 })

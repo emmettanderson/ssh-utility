@@ -35,7 +35,7 @@ export class CommandListComponent implements OnInit, OnChanges {
   }
 
   addItem(newitem, onchangeflag) {
-    if (newitem) {
+    if (newitem && newitem.value !== '') {
       this.CommandAry.push(newitem.value);
       this.input.nativeElement.value = '';
       if (onchangeflag !== 1) {
@@ -43,6 +43,7 @@ export class CommandListComponent implements OnInit, OnChanges {
       }
     }
   }
+
   removeItem(index) {
     this.CommandAry.splice(index, 1);
     this.sendDataToParent.emit(this.CommandAry);

@@ -27,10 +27,16 @@
   <div id='filelistdiv'>
     <mat-list dense span='margin-top:2em'>
       <mat-list-item *ngFor='let srcfile of srcFileAry;let i=index;'>
-        <span class='codestyle' style='width:100%'>Source: {{srcfile}}</span>
+        <span class='codestyle'
+              style='width:100%;word-wrap: break-word;'>
+              Source: {{srcfile}}
+        </span>
         <br/>
-        <span class='codestyle' style='width:100%'>Dest: {{destFileAry[i]}}</span>
-        <span>
+        <span class='codestyle'
+              style='width:90%;word-wrap: break-word;'>
+                  Dest: {{destFileAry[i]}}
+        </span>
+        <span style='display: inline-flex;'>
           <i (click)='editItem(i)' class='fa fa-edit'></i>
           <i (click)='removeItem(i)' class='fa fa-remove'></i>
         </span>

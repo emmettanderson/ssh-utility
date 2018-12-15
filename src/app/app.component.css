@@ -20,9 +20,8 @@ h3 {
   width: 99%;
   min-height: 5em;
   margin:0;
-  text-overflow: normal;
   border: 1px solid lightblue;
-  border-radius: 3px;
+  border-radius: 10px;
   padding: 5px;
   margin: 10px;
   /*display: inline-block;*/
@@ -39,12 +38,16 @@ h3 {
   margin-bottom: -500em;
 }
 .listcontainer {
+  overflow-x: scroll;
+  display: block;
+  /*
   width: 100%;
   float: left;
   padding-bottom: 500em;
   margin-bottom: -500em;
-  margin-right: -1px; /* Thank you IE */
+  margin-right: -1px;
   white-space: pre-wrap;
+  */
 }
 .row {
   margin: 0;
@@ -55,13 +58,17 @@ h3 {
   padding-bottom: 500em;
   margin-bottom: -500em;
 }
-
+#filelistdiv {
+  width: 100% !important;
+}
 #filelistdiv div {
   display: inline-block !important;
+  width: 100% !important;
 }
 .codestyle {
   font-family: 'Courier New', Courier, monospace;
   font-weight: 600;
+  white-space: pre-line;
 }
 
 .compright {
@@ -82,7 +89,11 @@ h3 {
         padding: 5px 0;
     }
 }
-
+@media (min-width: 1200px) {
+  .container {
+    max-width: 100% !important;
+  }
+}
 .complist {
   margin: 0 0 2em 0;
   list-style-type: none;

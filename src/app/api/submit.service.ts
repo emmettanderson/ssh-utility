@@ -9,6 +9,7 @@ import {
   HttpRequest,
   HttpHeaders
 } from '@angular/common/http';
+import { Observable, Subject } from 'rxjs';
 import { Injectable } from '@angular/core';
 import { ApiService } from './api.service';
 import { SubmitListApiConfig } from './api.config';
@@ -38,19 +39,8 @@ export class SubmitService {
 
   public submitList(submitList: SubmitList) {
     console.log('SubmitListService call service SubmitList: ' + submitList);
-    return this.http.post(this.actionUrl, submitList, this._headers);
-    /*
-    return this.http
-      .get(this.actionUrl +
-        'target/' + submitList.targetGroup +
-        '/commands/' + submitList.commandList +
-        '/srcfiles/' + submitList.srcFileList +
-        '/destfiles/' + submitList.destFileList +
-        '/desc/' + submitList.description
-        , this._headers)
-      .catch(this.errorHandler);
-      */
+    const response = this.http.post<string>(this.actionUrl, submitList, this._headers);
+    return response;
   }
-
 }
 

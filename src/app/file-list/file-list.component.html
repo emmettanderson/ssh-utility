@@ -19,6 +19,7 @@
     <button #addbutton
             mat-stroked-button
             matSuffix
+            style='float: right;'
             (click)='addItem(newSrcItem.value, newDestItem.value)'
             color='primary'>Add</button>
   </div>
@@ -27,19 +28,26 @@
   <div id='filelistdiv'>
     <mat-list dense span='margin-top:2em'>
       <mat-list-item *ngFor='let srcfile of srcFileAry;let i=index;'>
-        <span class='codestyle'
-              style='width:100%;word-wrap: break-word;'>
-              Source: {{srcfile}}
-        </span>
-        <br/>
-        <span class='codestyle'
-              style='width:90%;word-wrap: break-word;'>
-                  Dest: {{destFileAry[i]}}
-        </span>
-        <span style='display: inline-flex;'>
-          <i (click)='editItem(i)' class='fa fa-edit'></i>
-          <i (click)='removeItem(i)' class='fa fa-remove'></i>
-        </span>
+        <p mat-line>
+          <span class='codestyle'
+                style='word-wrap: break-word;'>
+                Source: {{srcfile}}
+          </span>
+        </p>
+        <p mat-line>
+          <span class='codestyle'
+                style='word-wrap: break-word;'>
+                    Dest: {{destFileAry[i]}}
+          </span>
+          <span style='float: right;position: relative;top: -18px;'>
+            <button mat-icon-button>
+              <i (click)='editItem(i)' class='fa fa-edit'></i>
+            </button>
+            <button mat-icon-button>
+              <i (click)='removeItem(i)' class='fa fa-remove'></i>
+            </button>
+          </span>
+        </p>
       </mat-list-item>
     </mat-list>
   </div>

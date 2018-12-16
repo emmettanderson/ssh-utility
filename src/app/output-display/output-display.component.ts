@@ -2,11 +2,7 @@ import { Component, Inject, EventEmitter, OnInit, ChangeDetectionStrategy} from 
 import { ViewChild, SimpleChange, OnChanges, ElementRef, Input, Output } from '@angular/core';
 import { OutputDisplayService } from '../api/output-display.service';
 import { SessionLog } from '../models/submit.model';
-import { MatDialog, MatDialogRef, MAT_DIALOG_DATA, MAT_DIALOG_SCROLL_STRATEGY_PROVIDER_FACTORY } from '@angular/material';
-import { timer, of, Observable, Subject, BehaviorSubject } from 'rxjs';
-import { switchMap, startWith, takeUntil, catchError } from 'rxjs/operators';
-import { interval } from 'rxjs/internal/observable/interval';
-import { ObserveOnMessage } from 'rxjs/internal/operators/observeOn';
+import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material';
 
 export interface SessionLogInt {
   ProcessComplete: number | string;

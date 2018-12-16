@@ -35,7 +35,7 @@ export class HistoryListComponent implements OnInit, AfterViewInit, OnChanges {
   groupName: string;
   message: any = [];
 
-  public displayedColumns: string[] = ['logDate', 'commandList', 'srcFileList', 'destFileList', 'targetGroup', 'removeRecord'];
+  public displayedColumns: string[] = ['logDate', 'description', 'commandList', 'fileList', 'targetGroup', 'removeRecord'];
   dataSource: MatTableDataSource<HistoryListInt> = new MatTableDataSource();
 
   @ViewChild(MatPaginator) paginator: MatPaginator;

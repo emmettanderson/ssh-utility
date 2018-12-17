@@ -1,6 +1,7 @@
 import { Component, ViewChild, ElementRef, OnInit, Input, EventEmitter, SimpleChange, OnChanges, Output } from '@angular/core';
-import { CommandList } from '../models/command-list.model';
-import { DataService } from '../api/data.service';
+import { CommandList, SyntaxCheck } from '../models/command-list.model';
+import { CommandListService } from '../api/command-list.service';
+import { SyncAsync } from '@angular/compiler/src/util';
 
 @Component({
   selector: 'app-command-list',
@@ -11,12 +12,16 @@ import { DataService } from '../api/data.service';
 export class CommandListComponent implements OnInit, OnChanges {
   Title = 'SSH Commands';
   message: string;
-  newentry: CommandList;
   CommandAry: any = [];
+  public errorMessage = '';
 
   @Input() CommandList: string;
+  @Input() syntaxCheck: SyntaxCheck;
   @Output() sendDataToParent = new EventEmitter<any[]>();
   @ViewChild('newitem') input: ElementRef;
+  @ViewChild('syntaxerror') syntaxerror: ElementRef;
+
+  constructor(private _commandListService: CommandListService) { }
 
   ngOnChanges(changes: {[propKey: string]: SimpleChange}) {
     console.log('change log CommandList start');
@@ -34,7 +39,7 @@ export class CommandListComponent implements OnInit, OnChanges {
     }
   }
 
-  addItem(newitem, onchangeflag) {
+  public addItem(newitem, onchangeflag) {
     if (newitem && newitem.value !== '') {
       this.CommandAry.push(newitem.value);
       this.input.nativeElement.value = '';
@@ -44,6 +49,23 @@ export class CommandListComponent implements OnInit, OnChanges {
     }
   }
 
+  checkSyntax(newitem) {
+    this.syntaxCheck = new SyntaxCheck;
+    this._commandListService.checkCodeSyntax(newitem.value).subscribe(
+      resp => {
+        this.syntaxCheck = resp;
+        if (typeof this.syntaxCheck.summary !== 'undefined') {
+          if (this.syntaxCheck.summary === '1') {
+            this.syntaxerror.nativeElement.style.display = 'none';
+            this.syntaxerror.nativeElement.innerHTML = '';
+            this.addItem(newitem, 0);
+          } else {
+            this.syntaxerror.nativeElement.innerHTML = this.syntaxCheck.summary;
+            this.syntaxerror.nativeElement.style.display = '';
+          }
+        }
+    });
+  }
   removeItem(index) {
     this.CommandAry.splice(index, 1);
     this.sendDataToParent.emit(this.CommandAry);
@@ -52,9 +74,10 @@ export class CommandListComponent implements OnInit, OnChanges {
     this.input.nativeElement.value = command;
     console.log('commandAry edit: index: ' + index);
   }
-  constructor(private data: DataService) { }
+
 
   ngOnInit() {
+    this.syntaxCheck = {'summary': '1'};
     // this.data.currentMessage.subscribe(message => this.message = message);
   }
 

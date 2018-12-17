@@ -15,12 +15,6 @@ export class TargetListApiConfig {
 }
 
 @Injectable({ providedIn: 'root' })
-export class CommandListApiConfig {
-  public RestApi = '/csp/rest/sshtools/getcommandlist/';
-  public RestApiUrl = API_URL + this.RestApi;
-}
-
-@Injectable({ providedIn: 'root' })
 export class HistoryListApiConfig {
   public RestApi = '/csp/rest/sshtools/gethistorylist/';
   public RestApiUrl = API_URL + this.RestApi;
@@ -41,6 +35,12 @@ export class FileListApiConfig {
 @Injectable({ providedIn: 'root' })
 export class OutputDisplayApiConfig {
   public RestApi = '/csp/rest/sshtools/getsessionlog/';
+  public RestApiUrl = API_URL + this.RestApi;
+}
+
+@Injectable({ providedIn: 'root' })
+export class CommandListApiConfig {
+  public RestApi = '/csp/rest/sshtools/checksyntax/';
   public RestApiUrl = API_URL + this.RestApi;
 }
 

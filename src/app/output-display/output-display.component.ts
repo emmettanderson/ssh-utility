@@ -22,7 +22,6 @@ export interface SessionLogModalInt {
 export class OutputDisplayComponent implements OnInit, OnChanges {
   @Input() LogRowId: any;
   @Input() SessionLog: SessionLog;
-  @Input() SessionLogCounter: number;
   @Input() SessionLogText: any;
   @Input() ProcessComplete: any;
   @Input('sessionLog') sessionLog;

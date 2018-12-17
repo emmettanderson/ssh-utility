@@ -69,7 +69,6 @@ export class AppComponent implements OnInit {
     this.SessionLog = comp.SessionLog.SessionLog;
     this.ProcessComplete = comp.SessionLog.ProcessComplete;
     this.LogRowId = comp.LogRowId;
-    console.log('updateSessionLog counter: ' + this.SessionLogCounter);
   }
   updateFileList(fileAry: FileArray) {
     this.SubmitList.SourceFileList = fileAry.srcFileAry.join('\n');

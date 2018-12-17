@@ -6,7 +6,13 @@
                 #newitem (keyup.enter)='addItem(newitem)'
                 newitem.value=''
                 style='min-width:15em;'>
-        <button #addbutton mat-stroked-button matSuffix (click)='addItem(newitem)' color='primary'>Add</button>
+        <button #addbutton mat-stroked-button matSuffix (click)='checkSyntax(newitem)' color='primary'>Add</button>
+        <span #syntaxerror
+              id='syntaxerror'
+              class='codestyle'
+              syntaxerror.value=''
+              style='color:red;display: none;'>
+        </span>
     </mat-form-field>
     <div id='commandlistdiv'>
       <mat-list dense span='margin-top:2em'>

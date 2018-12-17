@@ -4,11 +4,23 @@
 Tool for executing cache terminal commands via SSH and transferring files via SFTP to multiple AIX servers.
 
 ## Installation
-Import HieCOMMONLIBSSHToolsV1.xml into local HS environment
-Run in desired HS namespace: 
+1.) Import HieCOMMONLIBSSHToolsV1.xml into local HS environment
+
+2.) Create web application:
+    * Name: /csp/rest/sshtools
+    * Dispatch Class: CUSTOM.CORE.REST.SSHToolUtils
+
+3.) Create local ensemble credentials: 
+    * Credential: ADLogin (HS access)
+    * Credential: SSHLogin (SSH access) 
+    * Must be on production with same namespace as one configured for REST service web application created in step #2
+
+4.) Run methods in desired HS namespace: 
   > Do ##Class(CUSTOM.CORE.Util.SSHTool.TargetConfig).Populate()
    
   > Do ##Class(CUSTOM.CORE.Util.SSHTool.TargetGroupConfig).Populate()
+
+*** Currently writing install method to handle these steps and allow user to enter config ***
 
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 6.1.1.
 

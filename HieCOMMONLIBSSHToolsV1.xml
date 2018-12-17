@@ -1,0 +1,970 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2017.1.1 (Build 111_0_17521U)" ts="2018-12-17 00:12:46">
+<Class name="CUSTOM.CORE.REST.SSHToolUtils">
+<Super>%CSP.REST</Super>
+<TimeChanged>64998,86364.977655</TimeChanged>
+<TimeCreated>64989,64890.88594</TimeCreated>
+
+<Parameter name="HandleCorsRequest">
+<Type>Integer</Type>
+<Default>1</Default>
+</Parameter>
+
+<Parameter name="UseSession">
+<Type>Integer</Type>
+<Default>1</Default>
+</Parameter>
+
+<XData name="UrlMap">
+<Description>
+This UrlMap maps http requests to the classmethod to which it should be dispatched </Description>
+<Data><![CDATA[
+<Routes>
+<Route Url="/gettargetgrouplist/" Method="GET" Call="GetTargetGroupList"/>
+<Route Url="/gettargetgrouplist/:GroupName" Method="GET" Call="GetTargetList"/>
+<Route Url="/getcommandlist/" Method="GET" Call="GetCommandList"/>
+<Route Url="/gethistorylist/" Method="GET" Call="GetHistoryList"/>
+<Route Url="/gethistorylist/remove/:RowId" Method="GET" Call="GetHistoryList"/>
+<Route Url="/getsessionlog/:RowId" Method="GET" Call="GetSessionLog"/>
+<Route Url="/submit/" Method="POST" Call="Submit"/>
+<Route Url="/srcfileinput/" Method="POST" Call="CopyFileToTempDirectory"/>
+</Routes>
+]]></Data>
+</XData>
+
+<Method name="Submit">
+<ClassMethod>1</ClassMethod>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	#Dim tObjectList As %RegisteredObject
+    Set %response.ContentType = "application/json"
+	
+	#; Store session variables to Log class
+	Set LogObject = ##Class(CUSTOM.CORE.Util.SSHTool.Log).%New()
+	Set LogObject.LogDate = +$Horolog
+	Set LogObject.LogTime = $Piece($Horolog,",",2)
+	
+	Set JsonPost = %request.Content.Read()
+	Do ..LogEntry(.LogObject, "Post From Application: "_JsonPost)
+	
+	Set Status = %request.Content.Rewind()
+	
+	Set tSC = ##class(%ZEN.Auxiliary.jsonProvider).%ParseJSON(%request.Content,"",.tObject)
+	Set Name = ""
+	For {
+		Set Name = $Order(tObject.%data(Name))
+		Quit:Name=""
+		
+		Set Value = tObject.%data(Name)
+		If Value = "" Continue
+		
+		If Name = "CommandStringList" || (Name = "SourceFileList") || (Name = "DestinationFileList") {
+			Set $Property(LogObject,Name) = $ListFromString(Value,$C(10))
+		}
+		ElseIf Name = "TargetGroup" {
+			Set $Property(LogObject,Name) = ##Class(CUSTOM.CORE.Util.SSHTool.TargetGroupConfig).GroupNameOpen(Value)
+		}
+		Else {
+			Set $Property(LogObject,Name) = Value
+		}
+	}
+	Set Status = LogObject.%Save()
+	Write "{""LogRowId"":"""_LogObject.%Id()_"""}"
+	
+	Job ..RunSSHCommand(LogObject.%Id())
+	
+ 	Kill LogObject
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="GetTargetGroupList">
+<ClassMethod>1</ClassMethod>
+<ProcedureBlock>0</ProcedureBlock>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set Status = $$$OK
+	
+	&SQL(
+		DECLARE GetTargetGroupList CURSOR FOR
+		SELECT ID, GroupName 
+		FROM CUSTOM_CORE_Util_SSHTool.TargetGroupConfig 
+	)
+	
+	&SQL(OPEN GetTargetGroupList)
+	
+	Set tJsonStream = ##Class(%Stream.TmpCharacter).%New()
+	Set ProxyObject = ##Class(%ZEN.proxyObject).%New()
+	
+	For {
+		&SQL(FETCH GetTargetGroupList INTO :RowId,:GroupName)
+		If SQLCODE Quit
+		
+		//Write !,"RowId: ",RowId," GroupName: ",GroupName
+		Set ProxyObject.id = RowId
+		Set ProxyObject.GroupName = GroupName
+		Set Status = ##class(%ZEN.Auxiliary.jsonProvider).%WriteJSONStreamFromObject(tJsonStream,ProxyObject,,,0,"") 
+	}
+	&SQL(CLOSE GetTargetGroupList)
+
+	If $IsObject(tJsonStream) {
+		Do tJsonStream.Rewind()
+		Set JsonString = tJsonStream.Read()
+		Write "["_$Replace(JsonString,"}{","},{")_"]"
+	}
+	Quit Status
+]]></Implementation>
+</Method>
+
+<Method name="GetTargetList">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>GroupName:%String=""</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	#Dim TargetObject As CUSTOM.CORE.Util.SSHTool.TargetConfig
+	
+	If GroupName="" Quit Status
+	
+	Set Status = $$$OK
+	
+	Set tJsonStream = ##Class(%Stream.TmpCharacter).%New()
+	Set ProxyObject = ##Class(%ZEN.proxyObject).%New()
+	
+	Set GroupObject = ##Class(CUSTOM.CORE.Util.SSHTool.TargetGroupConfig).GroupNameOpen(GroupName)
+	If '$IsObject(GroupObject) Quit Status
+	
+	For Index = 1:1:GroupObject.TargetList.Count() {
+		Set TargetObject = GroupObject.TargetList.GetAt(Index)
+		If '$IsObject(TargetObject) Continue
+		
+		Set ProxyObject.id = TargetObject.%Id()
+		Set ProxyObject.HostName = TargetObject.HostName
+		Set ProxyObject.HostUrl = TargetObject.HostUrl
+		
+		Set Status = ##class(%ZEN.Auxiliary.jsonProvider).%WriteJSONStreamFromObject(tJsonStream,ProxyObject,,,0,"") 
+	}
+
+	If $IsObject(tJsonStream) {
+		Do tJsonStream.Rewind()
+		Set JsonString = tJsonStream.Read()
+		Write "["_$Replace(JsonString,"}{","},{")_"]"
+	}
+	Quit Status
+]]></Implementation>
+</Method>
+
+<Method name="GetSessionLog">
+<Description>
+If RowID passed, remove the row and return history list</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>RowId:%String=""</FormalSpec>
+<ProcedureBlock>0</ProcedureBlock>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set Status = $$$OK
+	If RowId="" Quit Status
+	
+	Set SessionLog = ##Class(CUSTOM.CORE.Util.SSHTool.Log).SessionLogGetStored(RowId)
+	Set ProcessComplete = ##Class(CUSTOM.CORE.Util.SSHTool.Log).ProcessCompleteGetStored(RowId)
+	
+	Write "{""ProcessComplete"":"""_ProcessComplete_""",""SessionLog"":"""_$ZStrip($Replace($Replace(SessionLog,$C(13,10),"\r\n"),"""","'"),"*C")_"""}"
+	Quit Status
+]]></Implementation>
+</Method>
+
+<Method name="CopyFileToTempDirectory">
+<Description>
+This is to get around browser block on true file directory path displaying </Description>
+<ClassMethod>1</ClassMethod>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set Status = $$$OK
+	Set JsonPost = %request.Content.Read()
+	Set ^ZJA($zn,"sourcefileform",$zdt($h,8,1),"post") = JsonPost
+	Do %request.Content.Rewind()
+	
+	#; Example: ="------WebKitFormBoundaryToAQoaHqx2gLFnLj"_$c(13,10)
+	#;          "Content-Disposition: form-data; name=""Clinical Viewer Map_Approved_1.1.2.csv""; filename=""Clinical Viewer Map_Approved_1.1.2.csv"""_$c(13,10)
+	#;          "Content-Type: application/vnd.ms-excel"_$c(13,10,13,10)
+	Set FileName = $Piece(JsonPost,"; filename=",2)
+	Set FileName = $Piece(FileName,$C(13,10),1)
+	Set FileName = $Replace(FileName,"""","")
+	
+	Set TempFileName = ##class(%Library.File).TempFilename("txt")
+	Set $Piece(TempFileName,"\",$Length(TempFileName,"\")) = FileName
+	
+	Set FileObject = ##Class(%Stream.FileBinary).%New()
+	
+	Set FileObject.Filename = FileName_".tmp"
+	Set Status = FileObject.CopyFromAndSave(%request.Content)
+
+  	If $$$ISERR(Status) {
+	  	Set ^ZJA($zn,"sourcefileform",$zdt($h,8,1),"Status") = $System.Status.DisplayError(Status)
+  	}
+  	Set Status = FileObject.%Save()
+  	Write "{""srcFile"":"""_$ZCVT(FileObject.Filename,"O","JS")_""",""destFile"":""""}"
+	Quit Status
+]]></Implementation>
+</Method>
+
+<Method name="GetHistoryList">
+<Description>
+If RowID passed, remove the row and return history list</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>RowId:%String=""</FormalSpec>
+<ProcedureBlock>0</ProcedureBlock>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set Status = $$$OK
+	If RowId'="" {
+		Set Status = ##Class(CUSTOM.CORE.Util.SSHTool.Log).%DeleteId(RowId)
+	}
+	
+	&SQL(
+		DECLARE GetHistoryList CURSOR FOR
+		SELECT ID
+		FROM CUSTOM_CORE_Util_SSHTool.Log 
+	)
+	
+	&SQL(OPEN GetHistoryList)
+	
+	Set tJsonStream = ##Class(%Stream.TmpCharacter).%New()
+	Set ProxyObject = ##Class(%ZEN.proxyObject).%New()
+	
+	For {
+		&SQL(FETCH GetHistoryList INTO :RowId)
+		If SQLCODE Quit
+		
+		Set LogObject = ##Class(CUSTOM.CORE.Util.SSHTool.Log).%OpenId(RowId)
+		If '$IsObject(LogObject) Continue
+		
+		Set ProxyObject.rowId = RowId
+		Set ProxyObject.logDate = $ZD(LogObject.LogDate,8)
+		Set ProxyObject.logTime = $ZT(LogObject.LogTime,2)
+		Set ProxyObject.description = LogObject.Description
+		Set ProxyObject.commandList = $ListToString(LogObject.CommandStringList, $C(10))
+		Set ProxyObject.srcFileList = $ListToString(LogObject.SourceFileList, $C(10))
+		Set ProxyObject.destFileList = $ListToString(LogObject.DestinationFileList, $C(10))
+		Set ProxyObject.targetGroup = LogObject.TargetGroup.GroupName
+		
+		Set Status = ##class(%ZEN.Auxiliary.jsonProvider).%WriteJSONStreamFromObject(tJsonStream,ProxyObject,,,0,"") 
+	}
+	&SQL(CLOSE GetHistoryList)
+
+	If $IsObject(tJsonStream) {
+		Do tJsonStream.Rewind()
+		Set JsonString = tJsonStream.Read()
+		Write "["_$Replace(JsonString,"}{","},{")_"]"
+	}
+	Quit Status
+]]></Implementation>
+</Method>
+
+<Method name="GetCredentials">
+<Description>
+Get Target-specific ens credentials - these must be defined on local instance</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[TargetObject:CUSTOM.CORE.Util.SSHTool.TargetConfig,&HSCredentials:Ens.Config.Credentials,&SSHCredentials:Ens.Config.Credentials]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set HSCreds = "ADLogin"
+	Set SSHCreds = "SSHLogin"
+	
+	If TargetObject.HSLogin'="" Set HSCreds = TargetObject.HSLogin
+	If TargetObject.SSHLogin'="" Set SSHCreds  = TargetObject.SSHLogin
+	
+	Set SSHCredentials = ##class(Ens.Config.Credentials).%OpenId(SSHCreds)
+	If '$IsObject(SSHCredentials) {
+		Set LogString = "No SSH credentials found for "_SSHCreds_$C(13,10)_" **** Quitting."
+		Do ..LogEntry(.LogObject, LogString)
+		Quit 0
+	}
+	Set HSCredentials = ##class(Ens.Config.Credentials).%OpenId(HSCreds)
+	If '$IsObject(HSCredentials) {
+		Set LogString = "No HS credentials found for "_HSCreds_$C(13,10)_" ***** Quitting."
+		Do ..LogEntry(.LogObject, LogString)
+		Quit 0
+	}
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="RunSSHCommand">
+<Description>
+Need to create credentials on Local AG production for SSHLogin and ADLogin</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>LogObjectId:%String=""</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set Status = $$$OK
+	#Dim sftpObject As %Net.SSH.SFTP
+	#Dim TargetObject As CUSTOM.CORE.Util.SSHTool.TargetConfig
+		
+	If LogObjectId = "" Quit
+	
+	Try {
+		Set LogObject = ##Class(CUSTOM.CORE.Util.SSHTool.Log).%OpenId(LogObjectId)
+		Set Command = ""
+		If LogObject.CommandStringList '= "" {
+			Set Command = $ListToString(LogObject.CommandStringList," ")
+		}
+		
+		/// Modify this to write to a div on screen
+		Set LogString = "**** Process Starting ****"
+		
+		For Index = 1:1:LogObject.TargetGroup.TargetList.Count()	{
+			Set TargetObject = LogObject.TargetGroup.TargetList.GetAt(Index)
+			If '$IsObject(TargetObject) {
+				Set LogString = "Unable to find config in CUSTOM.CORE.Util.SSHTool.TargetConfig "_
+					"for HostName = "_Target
+				Do ..LogEntry(.LogObject, LogString)
+				Continue
+			}
+			Set Status = ..GetCredentials(TargetObject, .HSCredentials, .SSHCredentials)
+			Set Target = TargetObject.HostName
+			
+			Set sshObject = ##class(%Net.SSH.Session).%New()
+		 	
+		 	Set LogString = "Connecting to "_TargetObject.HostUrl
+	 		Do ..LogEntry(.LogObject, LogString)
+	 		
+		 	#; CONNECT TO SSH SESSION
+			Set Status = sshObject.Connect(TargetObject.HostUrl)
+		 	If $$$ISERR(Status) {
+			 	Set LogString = Target_": Error connecting: "_TargetObject.HostUrl_
+					" >>>>>> "_$$GetErrorText^%apiOBJ(Status)_$C(13,10)_" ****** Quitting."
+			 	Do ..LogEntry(.LogObject, LogString)
+				Continue 
+			} Else {
+				Set LogString = Target_": Connected: "_TargetObject.HostUrl
+				Do ..LogEntry(.LogObject, LogString)
+			}
+			
+			#; AUTHENTICATE
+			Set Status = sshObject.AuthenticateWithUsername(SSHCredentials.Username, SSHCredentials.Password)
+			If $$$ISERR(Status) {
+				Set LogString = Target_": Error authenticating: "_SSHCredentials.Username_" >>>>>>> "_
+					$$GetErrorText^%apiOBJ(Status)_$C(13,10)_" ***** Quitting."
+				Do ..LogEntry(.LogObject, LogString)
+				Continue 
+			} Else {
+				Set LogString = Target_": Authenticated: "_SSHCredentials.Username
+				Do ..LogEntry(.LogObject, LogString)
+			}
+			
+			#; OPEN SFTP CONNECTION
+			Set Status = sshObject.OpenSFTP(.sftpObject)
+			If $$$ISERR(Status) {
+				Set LogString = Target_": Error opening SFTP session >>>>>> "_
+					$$GetErrorText^%apiOBJ(Status)_$C(13,10)_" ****** Quitting."
+				Do ..LogEntry(.LogObject, LogString)
+				Continue
+			} Else {
+				Set LogString = Target_": SFTP session opened... "
+				Do ..LogEntry(.LogObject, LogString)
+			}
+			For fileIndex = 1:1:$ListLength(LogObject.SourceFileList) {
+				Set FromFile = $ListGet(LogObject.SourceFileList, fileIndex)
+				Set ToFile = $ListGet(LogObject.DestinationFileList, fileIndex)
+				
+				#; Move Files 
+				If FromFile '="" && (ToFile'="") {
+					Set zToFile = ToFile
+					
+					#; Northwell-specific for multiple AGs
+					If $Extract(Target,1,4) = "HSAG" {
+						Set zToFile = $Case(Target["04",
+											1:$Replace(ToFile,"access01","access04"),
+											:$Replace(ToFile,"access04","access01"))
+					}
+					
+					#; Replace [Healthshare]/ with defined HSInstallPath
+					Set zToFile = $Replace(ToFile, "[Healthshare]/", TargetObject.HSInstallPath)
+					Set zToFile = $Replace(zToFile, "//","/")  // In case user entered "/" before [Healthshare]
+					
+					#; Double-check
+					If $Piece(zToFile,"/",2) = "app01" {
+						Set $Piece(zToFile,"/",3) = $Case($Extract(Target,1,6),
+															"HSHIED":"dev",
+															"HSHIEI":"idev",
+															"HSHIEQ":"qa",
+															"HSAGST":"stage",
+															"HSAGPR":"prd",
+															:$Piece(zToFile,"/",3)) 
+					}
+					
+					Set Status = sftpObject.Put(FromFile,zToFile)
+					
+					If $$$ISERR(Status) {
+						Set LogString = "Error putting file: "_FromFile_" to "_zToFile_
+							" >>>>>> "_$$GetErrorText^%apiOBJ(Status)
+						Do ..LogEntry(.LogObject, LogString)
+					} Else {
+						Set LogString = Target_": Transferred File: "_zToFile
+						Do ..LogEntry(.LogObject, LogString)
+						
+						Set Status = sftpObject.SetPermissions(zToFile,"ugo+rwx")
+						If $$$ISERR(Status) {
+							Set LogString = Target_": Error setting permissions: "_zToFile_" >>>>>> "_
+								$$GetErrorText^%apiOBJ(Status)
+							Do ..LogEntry(.LogObject, LogString)
+						} Else {
+							Set LogString = Target_": Permissions set to ugo+rwx"
+							Do ..LogEntry(.LogObject, LogString)
+						}
+					}
+				}
+			}
+			If Command="" Continue
+			
+			#; Strip alpha character from AG04 hosts
+			Set Host = $ZCVT(Target,"L")
+			If Host [ "04" Set Host = $Extract(Host,1,$Length(Host) - 1)
+			
+			Set Namespace = $Case(Target [ "01", 1:"ACCESS01",:"ACCESS04")
+			If Target'["STAGE" && (Target'["PROD") Set Namespace = "ACCESS04"
+			
+			Set originalCommand = $ListToString(LogObject.CommandStringList," ")
+			If Namespace = "ACCESS01" {
+				Set Command = $Replace(Command,"ACCESS04","ACCESS01")
+			}
+			#; Use HS_Services credentials to run class method for export
+			Set CommandString = "echo '"_HSCredentials.Username_"\n"_HSCredentials.Password_"\n"
+			Set CommandString = CommandString_Command_"' | csession "_Host_" -U "_Namespace
+			
+			Set Command = originalCommand
+			
+			Set LogString = Target_": Executing Command >>>> "_$Replace(CommandString, HSCredentials.Password, "******")
+			Do ..LogEntry(.LogObject, LogString)
+		
+			Set Status = sshObject.Execute(CommandString,.tDevice)
+			If $$$ISERR(Status) {
+				Set LogString = Target_": Error executing command >>> "_$$GetErrorText^%apiOBJ(Status)_$C(13,10)_" **** Quitting."
+				Do ..LogEntry(.LogObject, LogString)
+				Continue
+			} Else {
+				Use tDevice
+				Read X
+				Use $P
+				Close tDevice
+				Set LogString = Target_": Command Complete."
+				Do ..LogEntry(.LogObject, LogString)
+				Set LogString = Target_": ***************** RESPONSE"_$c(13,10)
+				Set LogString = LogString_$Get(X)_$c(13,10)
+				Set LogString = LogString_Target_": ***************** END OF RESPONSE"_$c(13,10)
+				Do ..LogEntry(.LogObject, LogString)
+			}
+		}
+		#; Remove temp files created locally
+		If $Piece(FromFile,".",$Length(FromFile,".")) = "tmp" {
+			Set Status = ##Class(%File).Delete(FromFile)
+			If $$$ISERR(Status) {
+				Set LogString = Target_": Error deleting temp file: "_$ZCVT(FromFile,"O","JS")_" >>>>>> "_
+					$$GetErrorText^%apiOBJ(Status)
+				Do ..LogEntry(.LogObject, LogString)
+			} Else {
+				Set LogString = Target_": Temp File Deleted: "_$ZCVT(FromFile,"O","JS")
+				Do ..LogEntry(.LogObject, LogString)
+			}
+		}
+	} Catch {
+		Set Error = $ZE
+		Set LogString = "******* Process exited on Error: "_Error_$C(13,10)
+	}
+
+	Set LogString = " Process Complete..."
+	Do ..LogEntry(.LogObject, LogString, 1)
+	
+	Set Status = sftpObject.CloseSFTP()
+
+	Quit Status
+]]></Implementation>
+</Method>
+
+<Method name="Install">
+<ClassMethod>1</ClassMethod>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set Status = $$$OK
+	#; DEFINE default HS production where local credentials will be stored. 
+	#; * Note: CUSTOM.CORE.REST.SSHToolUtils web application must be associated with this namespace.
+	
+	#; DEFINE default SSH Credentials: SSHLogin (for access to OS) and HSLogin (for access to Healthshare)
+	#; * Each target environment can have its own defined credential for SSH and HS access but if not defined, 
+	#;   SSHLogin and HSLogin credentials will be used 
+	
+	#; DEFINE local user/pass for angular application access to local REST service
+	#; * This must be done in angular app code as Base64 encoded string in /app/api/api.config.ts
+	#; * Example (password = "demo"): public UserPassBasic = 'Basic amFuZGVyc29uOmRlbW8=';  
+	
+	#; DEFINE target environments
+	
+	#; DEFINE target environment groups (can be one or more target(s) per group)
+	
+	
+	Quit Status
+]]></Implementation>
+</Method>
+
+<Method name="LogEntry">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&LogObject:CUSTOM.CORE.Util.SSHTool.Log,LogString:%String="",ProcessComplete:%Boolean=0]]></FormalSpec>
+<Implementation><![CDATA[
+	Set LogObject.SessionLog = LogObject.SessionLog_$c(13,10)_$ZDT($Horolog,8,2)_": "_LogString
+	Set LogObject.ProcessComplete = ProcessComplete
+	Set Status = LogObject.%Save()
+	Quit
+]]></Implementation>
+</Method>
+</Class>
+
+
+<Class name="CUSTOM.CORE.Util.SSHTool.GeneralConfig">
+<Super>%Persistent</Super>
+<TimeChanged>64990,61952.933259</TimeChanged>
+<TimeCreated>64990,61951.7359</TimeCreated>
+
+<Storage name="Default">
+<Type>%Library.CacheStorage</Type>
+<DataLocation>^CUSTOM.CORE23F1.GeneralConfigD</DataLocation>
+<DefaultData>GeneralConfigDefaultData</DefaultData>
+<IdLocation>^CUSTOM.CORE23F1.GeneralConfigD</IdLocation>
+<IndexLocation>^CUSTOM.CORE23F1.GeneralConfigI</IndexLocation>
+<StreamLocation>^CUSTOM.CORE23F1.GeneralConfigS</StreamLocation>
+<Data name="GeneralConfigDefaultData">
+<Structure>listnode</Structure>
+<Subscript/>
+<Value name="1">
+<Value>%%CLASSNAME</Value>
+</Value>
+</Data>
+</Storage>
+</Class>
+
+
+<Class name="CUSTOM.CORE.Util.SSHTool.Log">
+<Description>
+This is a log of all previous submitted commands and target environments</Description>
+<Super>%Persistent</Super>
+<TimeChanged>64996,39860.098538</TimeChanged>
+<TimeCreated>64990,61937.055419</TimeCreated>
+
+<Property name="LogDate">
+<Type>%Date</Type>
+</Property>
+
+<Property name="LogTime">
+<Type>%Time</Type>
+</Property>
+
+<Property name="Description">
+<Type>%String</Type>
+<Parameter name="MAXLEN" value="300"/>
+</Property>
+
+<Property name="SessionLog">
+<Description>
+Output of execution log and environment response</Description>
+<Type>%String</Type>
+<Parameter name="MAXLEN" value="3000000"/>
+</Property>
+
+<Property name="CommandStringList">
+<Description>
+List of terminal commands sent to environments</Description>
+<Type>%List</Type>
+</Property>
+
+<Property name="SourceFileList">
+<Description>
+Local Files sent to environments</Description>
+<Type>%List</Type>
+</Property>
+
+<Property name="DestinationFileList">
+<Description>
+Destination Files sent to environments</Description>
+<Type>%List</Type>
+</Property>
+
+<Property name="TargetGroup">
+<Type>CUSTOM.CORE.Util.SSHTool.TargetGroupConfig</Type>
+</Property>
+
+<Property name="ProcessComplete">
+<Type>%Boolean</Type>
+<InitialExpression>0</InitialExpression>
+</Property>
+
+<Index name="DateTime">
+<Properties>LogDate,LogTime</Properties>
+</Index>
+
+<Storage name="Default">
+<Type>%Library.CacheStorage</Type>
+<DataLocation>^CUSTOM.CORE.Util.SSHTool.LogD</DataLocation>
+<DefaultData>LogDefaultData</DefaultData>
+<IdLocation>^CUSTOM.CORE.Util.SSHTool.LogD</IdLocation>
+<IndexLocation>^CUSTOM.CORE.Util.SSHTool.LogI</IndexLocation>
+<StreamLocation>^CUSTOM.CORE.Util.SSHTool.LogS</StreamLocation>
+<Data name="LogDefaultData">
+<Value name="1">
+<Value>%%CLASSNAME</Value>
+</Value>
+<Value name="2">
+<Value>LogDate</Value>
+</Value>
+<Value name="3">
+<Value>LogTime</Value>
+</Value>
+<Value name="4">
+<Value>SessionLog</Value>
+</Value>
+<Value name="5">
+<Value>CommandStringList</Value>
+</Value>
+<Value name="6">
+<Value>FileList</Value>
+</Value>
+<Value name="7">
+<Value>TargetGroup</Value>
+</Value>
+<Value name="8">
+<Value>SourceFileList</Value>
+</Value>
+<Value name="9">
+<Value>DestinationFileList</Value>
+</Value>
+<Value name="10">
+<Value>Description</Value>
+</Value>
+<Value name="11">
+<Value>ProcessComplete</Value>
+</Value>
+</Data>
+</Storage>
+</Class>
+
+
+<Class name="CUSTOM.CORE.Util.SSHTool.TargetConfig">
+<Super>%Persistent</Super>
+<TimeChanged>64998,68942.0313</TimeChanged>
+<TimeCreated>64990,58256.843916</TimeCreated>
+
+<Property name="HostName">
+<Type>%String</Type>
+</Property>
+
+<Property name="HostUrl">
+<Type>%String</Type>
+<Required>1</Required>
+</Property>
+
+<Property name="Description">
+<Type>%String</Type>
+<Parameter name="MAXLEN" value="32000"/>
+</Property>
+
+<Property name="HSInstallPath">
+<Description>
+Target environment's Healthshare installation directory
+Example (for stage): /app01/stage/hie/healthshare/
+Note: Always add closing "/" to end of path</Description>
+<Type>%String</Type>
+<Parameter name="MAXLEN" value="32000"/>
+</Property>
+
+<Property name="HSLogin">
+<Description>
+Local HS production credential containing user/pass  
+providing HS access to this environment </Description>
+<Type>%String</Type>
+</Property>
+
+<Property name="SSHLogin">
+<Description>
+Local HS production credential containing user/pass  
+providing SSH access to this environment </Description>
+<Type>%String</Type>
+</Property>
+
+<Index name="HostUrl">
+<Properties>HostUrl</Properties>
+<Unique>1</Unique>
+</Index>
+
+<Index name="HostName">
+<Properties>HostName</Properties>
+<Unique>1</Unique>
+</Index>
+
+<Method name="Populate">
+<ClassMethod>1</ClassMethod>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	
+	Set Status = $$$OK
+	Set TargetList = $ListBuild("hshiedev01","hshieidev01","hshieqa01","hsagstage01","hsagstage04a","hsagstage04b","hsagprod01","hsagprod04a","hsagprod04b","hsagprod04c","hsagprod04d","hsregstage01","hsregprod01","hsedgestage01","hsedgeprod01")
+	Set DescList = $ListBuild("HIE DEV Server","HIE IDEV Server","HIE QA Server","Stage01 Access Gateway","Stage04-a Access Gateway","Stage04-b Access Gateway","Prod01 Access Gateway","Prod04-a Access Gateway","Prod04-b Access Gateway","Prod04-c Access Gateway","Prod04-d Access Gateway ","Stage Registry","Prod Registry","Stage Edge","Prod Edge")
+	Set HSInstallPathList = $ListBuild("dev","idev","qa","stage","stage","stage","prd","prd","prd","prd","prd")
+	For Index = 1:1:$ListLength(TargetList) {
+		Set Target = $ListGet(TargetList, Index)
+		Set TargetUrl = Target_".nshs.edu"
+		Set Desc = $ListGet(DescList, Index)
+		Set HSInstallPath = "/app01/"_$ListGet(HSInstallPathList, Index)_"/hie/healthshare/"
+		
+		Set Object = ..HostUrlOpen(TargetUrl)
+		If '$IsObject(Object) {
+			Set Object = ..%New()
+		}
+		Set Object.HostUrl = TargetUrl
+		Set Object.HostName = Target
+		Set Object.Description = Desc
+		Set Object.HSInstallPath = HSInstallPath
+		
+		Set Status = Object.%Save()
+		If $$$ISERR(Status) Quit
+	}
+	Quit Status
+]]></Implementation>
+</Method>
+
+<Storage name="Default">
+<Type>%Library.CacheStorage</Type>
+<DataLocation>^CUSTOM.CORE.U23F1.TargetConfigD</DataLocation>
+<DefaultData>TargetConfigDefaultData</DefaultData>
+<IdLocation>^CUSTOM.CORE.U23F1.TargetConfigD</IdLocation>
+<IndexLocation>^CUSTOM.CORE.U23F1.TargetConfigI</IndexLocation>
+<StreamLocation>^CUSTOM.CORE.U23F1.TargetConfigS</StreamLocation>
+<Data name="TargetConfigDefaultData">
+<Value name="1">
+<Value>%%CLASSNAME</Value>
+</Value>
+<Value name="2">
+<Value>HostName</Value>
+</Value>
+<Value name="3">
+<Value>Description</Value>
+</Value>
+<Value name="4">
+<Value>HostUrl</Value>
+</Value>
+<Value name="5">
+<Value>HSLogin</Value>
+</Value>
+<Value name="6">
+<Value>SSHLogin</Value>
+</Value>
+<Value name="7">
+<Value>HSInstallPath</Value>
+</Value>
+</Data>
+</Storage>
+</Class>
+
+
+<Class name="CUSTOM.CORE.Util.SSHTool.TargetConfig">
+<Super>%Persistent</Super>
+<TimeChanged>64998,68942.0313</TimeChanged>
+<TimeCreated>64990,58256.843916</TimeCreated>
+
+<Property name="HostName">
+<Type>%String</Type>
+</Property>
+
+<Property name="HostUrl">
+<Type>%String</Type>
+<Required>1</Required>
+</Property>
+
+<Property name="Description">
+<Type>%String</Type>
+<Parameter name="MAXLEN" value="32000"/>
+</Property>
+
+<Property name="HSInstallPath">
+<Description>
+Target environment's Healthshare installation directory
+Example (for stage): /app01/stage/hie/healthshare/
+Note: Always add closing "/" to end of path</Description>
+<Type>%String</Type>
+<Parameter name="MAXLEN" value="32000"/>
+</Property>
+
+<Property name="HSLogin">
+<Description>
+Local HS production credential containing user/pass  
+providing HS access to this environment </Description>
+<Type>%String</Type>
+</Property>
+
+<Property name="SSHLogin">
+<Description>
+Local HS production credential containing user/pass  
+providing SSH access to this environment </Description>
+<Type>%String</Type>
+</Property>
+
+<Index name="HostUrl">
+<Properties>HostUrl</Properties>
+<Unique>1</Unique>
+</Index>
+
+<Index name="HostName">
+<Properties>HostName</Properties>
+<Unique>1</Unique>
+</Index>
+
+<Method name="Populate">
+<ClassMethod>1</ClassMethod>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	
+	Set Status = $$$OK
+	Set TargetList = $ListBuild("hshiedev01","hshieidev01","hshieqa01","hsagstage01","hsagstage04a","hsagstage04b","hsagprod01","hsagprod04a","hsagprod04b","hsagprod04c","hsagprod04d","hsregstage01","hsregprod01","hsedgestage01","hsedgeprod01")
+	Set DescList = $ListBuild("HIE DEV Server","HIE IDEV Server","HIE QA Server","Stage01 Access Gateway","Stage04-a Access Gateway","Stage04-b Access Gateway","Prod01 Access Gateway","Prod04-a Access Gateway","Prod04-b Access Gateway","Prod04-c Access Gateway","Prod04-d Access Gateway ","Stage Registry","Prod Registry","Stage Edge","Prod Edge")
+	Set HSInstallPathList = $ListBuild("dev","idev","qa","stage","stage","stage","prd","prd","prd","prd","prd")
+	For Index = 1:1:$ListLength(TargetList) {
+		Set Target = $ListGet(TargetList, Index)
+		Set TargetUrl = Target_".nshs.edu"
+		Set Desc = $ListGet(DescList, Index)
+		Set HSInstallPath = "/app01/"_$ListGet(HSInstallPathList, Index)_"/hie/healthshare/"
+		
+		Set Object = ..HostUrlOpen(TargetUrl)
+		If '$IsObject(Object) {
+			Set Object = ..%New()
+		}
+		Set Object.HostUrl = TargetUrl
+		Set Object.HostName = Target
+		Set Object.Description = Desc
+		Set Object.HSInstallPath = HSInstallPath
+		
+		Set Status = Object.%Save()
+		If $$$ISERR(Status) Quit
+	}
+	Quit Status
+]]></Implementation>
+</Method>
+
+<Storage name="Default">
+<Type>%Library.CacheStorage</Type>
+<DataLocation>^CUSTOM.CORE.U23F1.TargetConfigD</DataLocation>
+<DefaultData>TargetConfigDefaultData</DefaultData>
+<IdLocation>^CUSTOM.CORE.U23F1.TargetConfigD</IdLocation>
+<IndexLocation>^CUSTOM.CORE.U23F1.TargetConfigI</IndexLocation>
+<StreamLocation>^CUSTOM.CORE.U23F1.TargetConfigS</StreamLocation>
+<Data name="TargetConfigDefaultData">
+<Value name="1">
+<Value>%%CLASSNAME</Value>
+</Value>
+<Value name="2">
+<Value>HostName</Value>
+</Value>
+<Value name="3">
+<Value>Description</Value>
+</Value>
+<Value name="4">
+<Value>HostUrl</Value>
+</Value>
+<Value name="5">
+<Value>HSLogin</Value>
+</Value>
+<Value name="6">
+<Value>SSHLogin</Value>
+</Value>
+<Value name="7">
+<Value>HSInstallPath</Value>
+</Value>
+</Data>
+</Storage>
+</Class>
+
+
+<Class name="CUSTOM.CORE.Util.SSHTool.TargetGroupConfig">
+<Super>%Persistent</Super>
+<TimeChanged>64998,68355.47574</TimeChanged>
+<TimeCreated>64990,59645.014611</TimeCreated>
+
+<Property name="GroupName">
+<Type>%String</Type>
+</Property>
+
+<Property name="TargetList">
+<Type>CUSTOM.CORE.Util.SSHTool.TargetConfig</Type>
+<Collection>list</Collection>
+</Property>
+
+<Index name="GroupName">
+<Properties>GroupName</Properties>
+<Unique>1</Unique>
+</Index>
+
+<Method name="Populate">
+<Description>
+Default Populate for Northwell Health Implementation - Must Populate ..TargetConfig class first </Description>
+<ClassMethod>1</ClassMethod>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set Status = $$$OK
+	&sql(TRUNCATE Table CUSTOM_CORE_Util_SSHTool.TargetGroupConfig)
+	
+	Set GroupNameList = $ListBuild("Development Environments","QA Environment","Stage Environments","Non-Prod Environments","Production Environments")
+	Set TargetLists = $ListBuild($ListBuild("HSHIEDEV01","HSHIEIDEV01"),$ListBuild("HSHIEQA01"),$ListBuild("HSAGSTAGE01","HSAGSTAGE04a","HSAGSTAGE04b"),$ListBuild("HSHIEDEV01","HSHIEIDEV01","HSHIEQA01","HSAGSTAGE01","HSAGSTAGE04a","HSAGSTAGE04b"),$ListBuild("HSAGPROD01","HSAGPROD04a","HSAGPROD04b","HSAGPROD04c","HSAGPROD04d"))
+	For Index = 1:1:$ListLength(GroupNameList) {
+		Set GroupName = $ListGet(GroupNameList, Index)
+		Set TargetList = $ListGet(TargetLists, Index)
+		
+		Set GroupObject = ..GroupNameOpen(GroupName)
+		If '$IsObject(GroupObject) {
+			Set GroupObject = ..%New()
+		}
+		Set GroupObject.GroupName = GroupName
+		
+		For tIndex = 1:1:$ListLength(TargetList) {
+			Set Target = $ListGet(TargetList, tIndex)
+			Set Target = $ZCVT(Target,"L")_".nshs.edu"
+			Set TargetObject = ##Class(CUSTOM.CORE.Util.SSHTool.TargetConfig).HostUrlOpen(Target)
+			If '$IsObject(TargetObject) Continue
+		
+			Set Status = GroupObject.TargetList.Insert(TargetObject)
+			If $$$ISERR(Status) Quit
+		}
+		Set Status = GroupObject.%Save()
+		If $$$ISERR(Status) Quit
+	}
+	Quit Status
+]]></Implementation>
+</Method>
+
+<Storage name="Default">
+<Type>%Library.CacheStorage</Type>
+<DataLocation>^CUSTOM.COR23F1.TargetGroup32C4D</DataLocation>
+<DefaultData>TargetGroupConfigDefaultData</DefaultData>
+<IdLocation>^CUSTOM.COR23F1.TargetGroup32C4D</IdLocation>
+<IndexLocation>^CUSTOM.COR23F1.TargetGroup32C4I</IndexLocation>
+<StreamLocation>^CUSTOM.COR23F1.TargetGroup32C4S</StreamLocation>
+<Data name="TargetGroupConfigDefaultData">
+<Value name="1">
+<Value>%%CLASSNAME</Value>
+</Value>
+<Value name="2">
+<Value>GroupName</Value>
+</Value>
+<Value name="3">
+<Value>TargetList</Value>
+</Value>
+</Data>
+</Storage>
+</Class>
+
+
+<Project name="HieCOMMONLIBSSHToolsV1" LastModified="2018-12-13 19:14:33.94884">
+  <Items>
+    <ProjectItem name="CUSTOM.CORE.REST.SSHToolUtils" type="CLS"></ProjectItem>
+    <ProjectItem name="CUSTOM.CORE.Util.SSHTool.GeneralConfig" type="CLS"></ProjectItem>
+    <ProjectItem name="CUSTOM.CORE.Util.SSHTool.Log" type="CLS"></ProjectItem>
+    <ProjectItem name="CUSTOM.CORE.Util.SSHTool.TargetConfig" type="CLS"></ProjectItem>
+    <ProjectItem name="CUSTOM.CORE.Util.SSHTool.TargetGroupConfig" type="CLS"></ProjectItem>
+  </Items>
+</Project>
+</Export>

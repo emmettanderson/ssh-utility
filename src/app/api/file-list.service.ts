@@ -12,23 +12,23 @@ import {
 import { Observable, Subject } from 'rxjs';
 import { Injectable } from '@angular/core';
 import { ApiService } from './api.service';
-import { SubmitListApiConfig } from './api.config';
-import { SubmitList } from '../models/submit.model';
+import { FileListApiConfig } from './api.config';
+import { FileList } from '../models/file-list.model';
 import { ApiConfig } from './api.config';
 
 @Injectable({
   providedIn: 'root'
 })
-export class SubmitService {
+export class FileListService {
   private actionUrl: string;
 
   private errorHandler: ApiService['handleError'];
 
   constructor(
     private http: HttpClient,
-    public _SubmitListApiConfig: SubmitListApiConfig,
+    public _FileListApiConfig: FileListApiConfig,
     public _apiConfig: ApiConfig,
-  ) { this.actionUrl = _SubmitListApiConfig.RestApiUrl; }
+  ) { this.actionUrl = _FileListApiConfig.RestApiUrl; }
 
   public _headers = {
     headers: new HttpHeaders()
@@ -37,11 +37,9 @@ export class SubmitService {
       // .append('Content-Type', 'text/html')
   };
 
-  public submitList(submitList: SubmitList) {
-    console.log('SubmitListService call service SubmitList: ' + submitList);
-    const response = this.http.post<string>(this.actionUrl, submitList, this._headers)
-      .catch(this.errorHandler);
+  public postSrcFileForm(fileList: FormData) {
+    console.log('FileList Service post: ' + fileList);
+    const response = this.http.post<FileList>(this.actionUrl, fileList, this._headers);
     return response;
   }
 }
-

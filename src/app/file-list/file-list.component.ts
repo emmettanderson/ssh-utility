@@ -1,6 +1,6 @@
 import { Component, ViewChild, ElementRef, OnInit, Input, EventEmitter, SimpleChange, OnChanges, Output } from '@angular/core';
 import { FileList, FileArray } from '../models/file-list.model';
-import { DataService } from '../api/data.service';
+import { FileListService } from '../api/file-list.service';
 
 @Component({
   selector: 'app-file-list',
@@ -24,6 +24,9 @@ export class FileListComponent implements OnInit, OnChanges {
 
   @ViewChild('newSrcItem') srcInput: ElementRef;
   @ViewChild('newDestItem') destInput: ElementRef;
+  @ViewChild('fileinputform') fileInputForm: ElementRef;
+
+  constructor(public _fileListService: FileListService) {}
 
   ngOnChanges(changes: {[propKey: string]: SimpleChange}) {
     console.log('change log File List start');
@@ -58,6 +61,16 @@ export class FileListComponent implements OnInit, OnChanges {
     }
   }
 
+  onFileInput(event) {
+    const formData = new FormData();
+    formData.append(event.target.files[0].name, event.target.files[0]);
+    console.log('file list service: ' + this._fileListService);
+    this._fileListService.postSrcFileForm(formData).subscribe(data => {
+        this.srcInput.nativeElement.value = data.srcFile;
+      });
+    // this.srcInput.nativeElement.value = event.target.value;
+  }
+
   removeItem(index) {
     this.srcFileAry.splice(index, 1);
     this.destFileAry.splice(index, 1);
@@ -75,7 +88,6 @@ export class FileListComponent implements OnInit, OnChanges {
     this.srcInput.nativeElement.value = this.srcFileAry[index];
     this.destInput.nativeElement.value = this.destFileAry[index];
   }
-  constructor(private data: DataService) { }
 
   ngOnInit() {
     this.fileAryObj = new FileArray;

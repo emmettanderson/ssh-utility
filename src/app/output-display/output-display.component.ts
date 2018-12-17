@@ -78,6 +78,10 @@ export class OutputDisplayComponent implements OnInit, OnChanges {
           clearInterval(intervalId);
         }
       }
+    } else {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
     }
   }
 

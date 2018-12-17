@@ -25,11 +25,6 @@ export class HistoryListApiConfig {
   public RestApi = '/csp/rest/sshtools/gethistorylist/';
   public RestApiUrl = API_URL + this.RestApi;
 }
-@Injectable({ providedIn: 'root' })
-export class FileListApiConfig {
-  public RestApi = '/csp/rest/sshtools/getfilelist/';
-  public RestApiUrl = API_URL + this.RestApi;
-}
 
 @Injectable({ providedIn: 'root' })
 export class SubmitListApiConfig {
@@ -38,13 +33,20 @@ export class SubmitListApiConfig {
 }
 
 @Injectable({ providedIn: 'root' })
+export class FileListApiConfig {
+  public RestApi = '/csp/rest/sshtools/srcfileinput/';
+  public RestApiUrl = API_URL + this.RestApi;
+}
+
+@Injectable({ providedIn: 'root' })
 export class OutputDisplayApiConfig {
   public RestApi = '/csp/rest/sshtools/getsessionlog/';
   public RestApiUrl = API_URL + this.RestApi;
 }
+
 @Injectable({ providedIn: 'root' })
 export class ApiConfig {
-  // janderson
+  // janderson - demo
   public UserPassBasic = 'Basic amFuZGVyc29uOmRlbW8=';
   // HS-Services
   public ServicePassBasic = '';

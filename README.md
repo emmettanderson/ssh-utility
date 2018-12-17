@@ -1,5 +1,10 @@
 # SshUtility
+*** Apologies - Currently designed for Northwell Health site implementation.
+***             Ongoing development to make site-agnostic. 
+Tool for executing cache terminal commands via SSH and transferring files via SFTP to multiple AIX servers.
 
+## Installation
+Import HealthshareBackendClasses.xml
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 6.1.1.
 
 ## Development server

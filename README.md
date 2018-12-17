@@ -4,7 +4,10 @@
 Tool for executing cache terminal commands via SSH and transferring files via SFTP to multiple AIX servers.
 
 ## Installation
-Import HealthshareBackendClasses.xml
+Import HieCOMMONLIBSSHToolsV1.xml into local HS environment
+Run in desired HS namespace: 
+  > Do ##Class(CUSTOM.CORE.Util.SSHTool.TargetConfig).Populate()
+  > Do ##Class(CUSTOM.CORE.Util.SSHTool.TargetGroupConfig).Populate()
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 6.1.1.
 
 ## Development server

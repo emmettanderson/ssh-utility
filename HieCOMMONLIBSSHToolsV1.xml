@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2017.1.1 (Build 111_0_17521U)" ts="2018-12-17 16:24:33">
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2017.1.1 (Build 111_0_17521U)" ts="2018-12-18 13:12:42">
 <Class name="CUSTOM.CORE.REST.SSHToolUtils">
 <Super>%CSP.REST</Super>
-<TimeChanged>64999,56985.358276</TimeChanged>
+<TimeChanged>65000,46480.521123</TimeChanged>
 <TimeCreated>64999,56985</TimeCreated>
 
 <Parameter name="HandleCorsRequest">
@@ -89,19 +89,22 @@ This UrlMap maps http requests to the classmethod to which it should be dispatch
 	Set Status = $$$OK
 	If CodeString = "" Quit Status
 	
-	If $Extract(CodeString) '= " " {
-		Set CodeString = " "_CodeString
-	}
-	Kill Error
-	Set Status = ##Class(%Routine).CheckSyntax(CodeString, .Error)
-	If $$$ISERR(Status) {
-		Set Status = $Get(Error(1))
-		Set Status = $ZCVT(Status,"O","JS")
-	} Else {
-		Set Status = 1
-	}
-	Write "{""syntaxcheck"":"""_Status_"""}"
-	Quit Status
+	Try {
+		If $Extract(CodeString) '= " " {
+			Set CodeString = " "_CodeString
+		}
+		Kill Error
+		Set Status = ##Class(%Routine).CheckSyntax(CodeString, .Error)
+		If $$$ISERR(Status) {
+			Set Status = $Get(Error(1))
+		} Else {
+			Set Status = "1"
+		}
+	} Catch(error) {Kill error Set $ZE="" }
+	
+	Write "{""summary"":"""_..FormatJSONValueString(Status)_"""}"
+	Set Status = ""
+	Quit $$$OK
 ]]></Implementation>
 </Method>
 
@@ -194,14 +197,25 @@ If RowID passed, remove the row and return history list</Description>
 	Set SessionLog = ##Class(CUSTOM.CORE.Util.SSHTool.Log).SessionLogGetStored(RowId)
 	Set ProcessComplete = ##Class(CUSTOM.CORE.Util.SSHTool.Log).ProcessCompleteGetStored(RowId)
 	
-	Set SessionLog = $Replace(SessionLog,$C(13),"\r")         // Replace CR with regexp
-	Set SessionLog = $Replace(SessionLog,$C(10),"\n")         // Replace LF with regexp
-	Set SessionLog = $Replace(SessionLog,"""","'")            // Replace double-quote with single-quote
-	Set SessionLog = $ZStrip(SessionLog,"*C")                 // Strip remaining control chars
-	Set SessionLog = $Replace(SessionLog,"\'","'")            // remove escape backslash from single quotes
-	
+	Set SessionLog = ..FormatJSONValueString(SessionLog)
+		
 	Write "{""ProcessComplete"":"""_ProcessComplete_""",""SessionLog"":"""_SessionLog_"""}"
 	Quit Status
+]]></Implementation>
+</Method>
+
+<Method name="FormatJSONValueString">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>JsonString:%String=""</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	Set JsonString = $Replace(JsonString,$C(13),"\r")         // Replace CR with regexp
+	Set JsonString = $Replace(JsonString,$C(10),"\n")         // Replace LF with regexp
+	Set JsonString = $Replace(JsonString,$C(9),"\t")          // Replace TAB with regexp
+	Set JsonString = $Replace(JsonString,"""","'")            // Replace double-quote with single-quote
+	Set JsonString = $ZStrip(JsonString,"*C")                 // Strip remaining control chars
+	Set JsonString = $Replace(JsonString,"\'","'")            // remove escape backslash from single quotes
+	Quit JsonString
 ]]></Implementation>
 </Method>
 

@@ -38,7 +38,7 @@ export class CommandListService {
   };
 
   public checkCodeSyntax(command: string) {
-    return this.http.get<SyntaxCheck>(this.actionUrl + command, this._headers);
+    return this.http.get<SyntaxCheck>(this.actionUrl + encodeURIComponent(command), this._headers);
     // console.log('CommandList Code Check Service post: cmd: ' + command + '\nResponse: ' + this.syntaxCheck);
     // return this.syntaxCheck;
   }

@@ -3,7 +3,7 @@
     <mat-form-field style='width: 100%'>
         <input matInput
                 placeholder='SSH Command'
-                #newitem (keyup.enter)='addItem(newitem)'
+                #newitem (keyup.enter)='checkSyntax(newitem)'
                 newitem.value=''
                 style='min-width:15em;'>
         <button #addbutton mat-stroked-button matSuffix (click)='checkSyntax(newitem)' color='primary'>Add</button>

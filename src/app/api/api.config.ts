@@ -45,6 +45,12 @@ export class CommandListApiConfig {
 }
 
 @Injectable({ providedIn: 'root' })
+export class TrakLayoutApiConfig {
+  public RestApi = '/csp/rest/sshtools/traklayout/';
+  public RestApiUrl = API_URL + this.RestApi;
+}
+
+@Injectable({ providedIn: 'root' })
 export class ApiConfig {
   // janderson - demo
   public UserPassBasic = 'Basic amFuZGVyc29uOmRlbW8=';

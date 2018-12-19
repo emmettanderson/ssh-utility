@@ -1,4 +1,5 @@
-import { Component, OnInit, ViewEncapsulation, EventEmitter, OnChanges, SimpleChange, Input, Output } from '@angular/core';
+import { Component, OnInit, ViewEncapsulation, EventEmitter } from '@angular/core';
+import { SimpleChange, OnChanges, Input, Output } from '@angular/core';
 import { TargetListService } from '../api/target-list.service';
 
 export interface TargetGroupListInt {

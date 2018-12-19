@@ -29,6 +29,7 @@ import { FileListComponent } from './file-list/file-list.component';
 // import { OutputDisplayComponent } from './output-display/output-display.component';
 import { OutputDisplayModalComponent, OutputDisplayComponent } from './output-display/output-display.component';
 import { DataService } from './api/data.service';
+import { TrakLayoutComponent } from './trak-layout/trak-layout.component';
 
 @NgModule({
   declarations: [
@@ -38,7 +39,8 @@ import { DataService } from './api/data.service';
     CommandListComponent,
     FileListComponent,
     OutputDisplayComponent,
-    OutputDisplayModalComponent
+    OutputDisplayModalComponent,
+    TrakLayoutComponent
   ],
   imports: [
     BrowserModule,

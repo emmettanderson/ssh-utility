@@ -2,6 +2,7 @@ import { Component, ChangeDetectorRef, Input, OnInit, ViewChild, ElementRef } fr
 import { HistoryList } from './models/history-list';
 import { CommandList } from './models/command-list.model';
 import { FileList, FileArray } from './models/file-list.model';
+import { SessionLog } from './models/submit.model';
 import { SubmitService } from './api/submit.service';
 import { SubmitList } from './models/submit.model';
 import { Observable, Subject } from 'rxjs';
@@ -16,9 +17,9 @@ import { Observable, Subject } from 'rxjs';
 export class AppComponent implements OnInit {
   title = 'SSH Tool';
   response: any;
-  sessionLog: Observable<string>;
   public LogRowId: string;
-  SessionLog: any;
+  SessionLog: SessionLog;
+  SessionLogText: string;
   SessionLogCounter: number;
   ProcessComplete: any;
   GroupName: string;
@@ -26,6 +27,7 @@ export class AppComponent implements OnInit {
   SrcFileList: string;
   DestFileList: string;
   Submitted: any;
+  Interval: any;
 
   @Input() SubmitList: SubmitList;
   @ViewChild('description') description: ElementRef;
@@ -51,6 +53,8 @@ export class AppComponent implements OnInit {
     this.SubmitList.DestinationFileList = historylist['destFileList'];
     this.SubmitList.Description = historylist['description'];
     this.description.nativeElement.value = historylist['description'];
+    this.LogRowId = historylist['rowId'];
+    this.ProcessComplete = '1';
   }
   updateCommandList(commandAry: string[]) {
     // const commandAry = commandList.map(command => command.CommandString);
@@ -66,9 +70,10 @@ export class AppComponent implements OnInit {
     }
   }
   updateSessionLog(comp) {
-    this.SessionLog = comp.SessionLog.SessionLog;
+    this.SessionLogText = comp.SessionLog.SessionLog;
     this.ProcessComplete = comp.SessionLog.ProcessComplete;
     this.LogRowId = comp.LogRowId;
+    this.Interval = comp.interval;
   }
   updateFileList(fileAry: FileArray) {
     this.SubmitList.SourceFileList = fileAry.srcFileAry.join('\n');
@@ -81,9 +86,14 @@ export class AppComponent implements OnInit {
   }
   submit(e) {
     console.log('submit: ' + this.SubmitList);
+    this.ProcessComplete = '0';
+    this.SessionLog = new SessionLog;
+    this.SessionLog.ProcessComplete = '0';
+    this.SessionLog.SessionLog = '';
+    this.Interval = '';
     this.SubmitList.Description = this.description.nativeElement.value;
     this._submitService.submitList(this.SubmitList).subscribe(data => {
-        this.LogRowId = data;
+        this.LogRowId = data.LogRowId;
       });
     this.Submitted = new Date();
   }

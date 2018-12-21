@@ -39,7 +39,7 @@ export class SubmitService {
 
   public submitList(submitList: SubmitList) {
     console.log('SubmitListService call service SubmitList: ' + submitList);
-    const response = this.http.post<string>(this.actionUrl, submitList, this._headers)
+    const response = this.http.post<any>(this.actionUrl, submitList, this._headers)
       .catch(this.errorHandler);
     return response;
   }

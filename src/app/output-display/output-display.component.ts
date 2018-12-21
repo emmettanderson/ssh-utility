@@ -20,10 +20,11 @@ export interface SessionLogModalInt {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class OutputDisplayComponent implements OnInit, OnChanges {
-  @Input() LogRowId: any;
+  @Input() LogRowId: string;
   @Input() SessionLog: SessionLog;
   @Input() SessionLogText: any;
   @Input() ProcessComplete: any;
+  @Input() interval: any;
   @Input('sessionLog') sessionLog;
 
   @Output() sendDataToParent = new EventEmitter<any>();
@@ -32,14 +33,14 @@ export class OutputDisplayComponent implements OnInit, OnChanges {
   @ViewChild('sessionlogdiv') sessionlogdiv: ElementRef;
 
   public showModal: boolean;
-  public interval: any = '';
 
   constructor(
     private _outputDisplayService: OutputDisplayService,
     public dialog: MatDialog
   ) {
     this.SessionLog = {'SessionLog': 'Init', 'ProcessComplete': '-1'};
-    this.LogRowId = {'LogRowId': ''};
+    this.LogRowId = '';  // {'LogRowId': ''};
+    this.interval = '';
   }
 
   openModalDialog(): void {
@@ -56,10 +57,6 @@ export class OutputDisplayComponent implements OnInit, OnChanges {
       this.interval = setInterval(() => {
         this.updateSessionLog(this.LogRowId);
         this.checkStatus(this.SessionLog, this.interval);
-        this.sendDataToParent.emit(this);
-        if (this.showModal) {
-          this.sendDataToChild.emit(this.SessionLogText);
-        }
         this.scrollToBottom();
         console.log('updateSessionLog SessionLog: ' + this.SessionLog.ProcessComplete);
       }, 1000);
@@ -72,7 +69,7 @@ export class OutputDisplayComponent implements OnInit, OnChanges {
   checkStatus(sessionLog, intervalId) {
     // Check if process is complete
     if (sessionLog && typeof sessionLog !== 'undefined') {
-      if (sessionLog.ProcessComplete === '1') {
+      if (sessionLog.ProcessComplete !== '0') {
         if (intervalId) {
           clearInterval(intervalId);
         }
@@ -86,9 +83,13 @@ export class OutputDisplayComponent implements OnInit, OnChanges {
 
   updateSessionLog(LogRowId) {
     if (LogRowId && typeof LogRowId !== 'undefined') {
-      this._outputDisplayService.getSessionLog(LogRowId.LogRowId)
+      this._outputDisplayService.getSessionLog(LogRowId)
         .subscribe(data => {
           this.SessionLog = data;
+          this.sendDataToParent.emit(this);
+          if (this.showModal) {
+            this.sendDataToChild.emit(this.SessionLogText);
+          }
           console.log('output display service data: ', data);
       });
     }
@@ -100,7 +101,8 @@ export class OutputDisplayComponent implements OnInit, OnChanges {
   }
   ngOnInit() {
     this.SessionLog = {'SessionLog': '', 'ProcessComplete': '-1'};
-    this.LogRowId = {'LogRowId': ''};
+    this.LogRowId = '';    // {'LogRowId': ''};
+    this.interval = '';
   }
 }
 

@@ -51,8 +51,10 @@
     <div class='container'>
       <app-output-display
         [LogRowId]='LogRowId'
-        [SessionLogText]='SessionLog'
+        [SessionLogText]='SessionLogText'
+        [SessionLog]='SessionLog'
         [ProcessComplete]='ProcessComplete'
+        [interval]='Interval'
         (sendDataToParent)='updateSessionLog($event)'>
       </app-output-display>
     </div>

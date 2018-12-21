@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2017.1.1 (Build 111_0_17521U)" ts="2018-12-18 13:12:42">
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2017.1.1 (Build 111_0_17521U)" ts="2018-12-21 12:23:40">
 <Class name="CUSTOM.CORE.REST.SSHToolUtils">
 <Super>%CSP.REST</Super>
-<TimeChanged>65000,46480.521123</TimeChanged>
+<TimeChanged>65002,68547.547555</TimeChanged>
 <TimeCreated>64999,56985</TimeCreated>
 
 <Parameter name="HandleCorsRequest">
@@ -90,10 +90,11 @@ This UrlMap maps http requests to the classmethod to which it should be dispatch
 	If CodeString = "" Quit Status
 	
 	Try {
-		If $Extract(CodeString) '= " " {
-			Set CodeString = " "_CodeString
+		If $Extract(CodeString) '= $C(9) {
+			Set CodeString = $C(9)_CodeString
 		}
 		Kill Error
+		S ^ZJA($zn,"CheckSyntax",$h,"Code") = CodeString
 		Set Status = ##Class(%Routine).CheckSyntax(CodeString, .Error)
 		If $$$ISERR(Status) {
 			Set Status = $Get(Error(1))
@@ -101,7 +102,8 @@ This UrlMap maps http requests to the classmethod to which it should be dispatch
 			Set Status = "1"
 		}
 	} Catch(error) {Kill error Set $ZE="" }
-	
+	m ^ZJA($zn,"CheckSyntax",$h,"%request.Data")=%request.Data
+	//m ^ZJA($zn,"CheckSyntax",$h,"%request.CgiEnvs")=%request.CgiEnvs
 	Write "{""summary"":"""_..FormatJSONValueString(Status)_"""}"
 	Set Status = ""
 	Quit $$$OK
@@ -353,8 +355,8 @@ Need to create credentials on Local AG production for SSHLogin and ADLogin</Desc
 			Set Command = $ListToString(LogObject.CommandStringList," ")
 		}
 		
-		/// Modify this to write to a div on screen
 		Set LogString = "**** Process Starting ****"
+		Do ..LogEntry(.LogObject, LogString)
 		
 		For Index = 1:1:LogObject.TargetGroup.TargetList.Count()	{
 			Set TargetObject = LogObject.TargetGroup.TargetList.GetAt(Index)
@@ -364,49 +366,22 @@ Need to create credentials on Local AG production for SSHLogin and ADLogin</Desc
 				Do ..LogEntry(.LogObject, LogString)
 				Continue
 			}
-			Set Status = ..GetCredentials(TargetObject, .HSCredentials, .SSHCredentials)
 			Set Target = TargetObject.HostName
 			
-			Set sshObject = ##class(%Net.SSH.Session).%New()
-		 	
-		 	Set LogString = "Connecting to "_TargetObject.HostUrl
-	 		Do ..LogEntry(.LogObject, LogString)
-	 		
-		 	#; CONNECT TO SSH SESSION
-			Set Status = sshObject.Connect(TargetObject.HostUrl)
-		 	If $$$ISERR(Status) {
-			 	Set LogString = Target_": Error connecting: "_TargetObject.HostUrl_
-					" >>>>>> "_$$GetErrorText^%apiOBJ(Status)_$C(13,10)_" ****** Quitting."
-			 	Do ..LogEntry(.LogObject, LogString)
-				Continue 
-			} Else {
-				Set LogString = Target_": Connected: "_TargetObject.HostUrl
-				Do ..LogEntry(.LogObject, LogString)
-			}
-			
-			#; AUTHENTICATE
-			Set Status = sshObject.AuthenticateWithUsername(SSHCredentials.Username, SSHCredentials.Password)
+			Set Status = ..GetCredentials(TargetObject, .HSCredentials, .SSHCredentials)
 			If $$$ISERR(Status) {
-				Set LogString = Target_": Error authenticating: "_SSHCredentials.Username_" >>>>>>> "_
-					$$GetErrorText^%apiOBJ(Status)_$C(13,10)_" ***** Quitting."
-				Do ..LogEntry(.LogObject, LogString)
-				Continue 
-			} Else {
-				Set LogString = Target_": Authenticated: "_SSHCredentials.Username
-				Do ..LogEntry(.LogObject, LogString)
-			}
-			
-			#; OPEN SFTP CONNECTION
-			Set Status = sshObject.OpenSFTP(.sftpObject)
-			If $$$ISERR(Status) {
-				Set LogString = Target_": Error opening SFTP session >>>>>> "_
-					$$GetErrorText^%apiOBJ(Status)_$C(13,10)_" ****** Quitting."
+				Set LogString = Target_": Error GetCredentials: "_$$GetErrorText^%apiOBJ(Status)
 				Do ..LogEntry(.LogObject, LogString)
 				Continue
-			} Else {
-				Set LogString = Target_": SFTP session opened... "
+			} 
+			
+			Set Status = ..ConnectSshSftp(TargetObject, .sshObject, .sftpObject, HSCredentials, SSHCredentials, .LogObject)
+			If $$$ISERR(Status) {
+				Set LogString = Target_": Error ConnectSshSftp "_$$GetErrorText^%apiOBJ(Status)
 				Do ..LogEntry(.LogObject, LogString)
-			}
+				Continue
+			} 
+			
 			For fileIndex = 1:1:$ListLength(LogObject.SourceFileList) {
 				Set FromFile = $ListGet(LogObject.SourceFileList, fileIndex)
 				Set ToFile = $ListGet(LogObject.DestinationFileList, fileIndex)
@@ -527,6 +502,67 @@ Need to create credentials on Local AG production for SSHLogin and ADLogin</Desc
 ]]></Implementation>
 </Method>
 
+<Method name="ConnectSshSftp">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[TargetObject:CUSTOM.CORE.Util.SSHTool.TargetConfig,&sshObject:%Net.SSH.Session,&sftpObject:%Net.SSH.SFTP,HSCredentials:Ens.Config.Credentials,SSHCredentials:Ens.Config.Credentials,&LogObject:CUSTOM.CORE.Util.SSHTool.Log]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set Status = $$$OK
+	Set (sshObject, sftpObject) = ""
+	Try {
+		Set sshObject = ##class(%Net.SSH.Session).%New()
+	 	
+	 	Set LogString = "Connecting to "_TargetObject.HostUrl
+		Do ..LogEntry(.LogObject, LogString)
+		
+	 	#; CONNECT AND AUTHENTICATE TO SSH SESSION
+		Set Status = sshObject.Connect(TargetObject.HostUrl)
+	 	If $$$ISERR(Status) {
+		 	Set LogString = TargetObject.HostName_": Error connecting: "_TargetObject.HostUrl_
+				" >>>>>> "_$$GetErrorText^%apiOBJ(Status)_$C(13,10)_" ****** Quitting."
+		 	Do ..LogEntry(.LogObject, LogString)
+			Set Status = 0
+			Quit 
+		} Else {
+			Set LogString = TargetObject.HostName_": Connected: "_TargetObject.HostUrl
+			Do ..LogEntry(.LogObject, LogString)
+		}
+		
+		#; AUTHENTICATE
+		Set Status = sshObject.AuthenticateWithUsername(SSHCredentials.Username, SSHCredentials.Password)
+		If $$$ISERR(Status) {
+			Set LogString = TargetObject.HostName_": Error authenticating: "_SSHCredentials.Username_" >>>>>>> "_
+				$$GetErrorText^%apiOBJ(Status)_$C(13,10)_" ***** Quitting."
+			Do ..LogEntry(.LogObject, LogString)
+			Set Status = 0
+			Quit 
+		} Else {
+			Set LogString = TargetObject.HostName_": Authenticated: "_SSHCredentials.Username
+			Do ..LogEntry(.LogObject, LogString)
+		}
+		
+		#; OPEN SFTP CONNECTION
+		Set Status = sshObject.OpenSFTP(.sftpObject)
+		If $$$ISERR(Status) {
+			Set LogString = TargetObject.HostName_": Error opening SFTP session >>>>>> "_
+				$$GetErrorText^%apiOBJ(Status)_$C(13,10)_" ****** Quitting."
+			Do ..LogEntry(.LogObject, LogString)
+			Set Status = 0
+			Quit
+		} Else {
+			Set LogString = TargetObject.HostName_": SFTP session opened... "
+			Do ..LogEntry(.LogObject, LogString)
+		}
+	} Catch {
+		Set Error = $ZE
+		Set LogString = TargetObject.HostName_": Cache Error: "_Error
+		Do ..LogEntry(.LogObject, LogString)
+		Set Status = 0
+	}
+	Quit Status
+]]></Implementation>
+</Method>
+
 <Method name="Install">
 <ClassMethod>1</ClassMethod>
 <ReturnType>%Status</ReturnType>
@@ -559,6 +595,7 @@ Need to create credentials on Local AG production for SSHLogin and ADLogin</Desc
 	Set LogObject.SessionLog = LogObject.SessionLog_$c(13,10)_$ZDT($Horolog,8,2)_": "_LogString
 	Set LogObject.ProcessComplete = ProcessComplete
 	Set Status = LogObject.%Save()
+	Set ^ZJA($zn,"log",$i(^ZJA)) = $ZDT($Horolog,8,2)_": "_LogString
 	Quit
 ]]></Implementation>
 </Method>

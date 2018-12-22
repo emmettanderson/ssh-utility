@@ -7,8 +7,6 @@ import {
 import { Injectable } from '@angular/core';
 import { Observable} from 'rxjs';
 
-import { ApiConfig } from './api.config';
-
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   public handleError(error: any) {

@@ -1,19 +1,23 @@
-<div class='listcontainer'>
-  <button mat-raised-button
-          style='margin: 10px;float: right;'
+<div style='width: 100%;display: inline-block;'>
+    <span style='color: #3491d4'>Session Log</span>
+    <button mat-raised-button
+          style='float: right;'
           color='primary'
           (click)='openModalDialog()'>
           Open Modal
-  </button>
+    </button>
+</div>
+<br/>
+<div class='listcontainer'>
   <div id='sessionlogdiv' #sessionlogdiv>
-    <span>Session Log</span>
     <span class='codestyle'>{{SessionLogText}}</span>
   </div>
 </div>
-<div *ngIf='showModal'>
-  <!--<app-output-display-modal
-    [SessionLogText]='SessionLogText'
-    (sendDataToChild)='updateModalComponent($event)'>
+<!--
+  <div *ngIf='showModal'>
+  <app-output-display-modal
+    [SessionLogText]='SessionLogText'>
   </app-output-display-modal>
-  -->
 </div>
+</app-output-display-modal>(sendDataToChild)='updateModalComponent($event)'>
+-->

@@ -52,8 +52,9 @@ export class TrakLayoutApiConfig {
 
 @Injectable({ providedIn: 'root' })
 export class ApiConfig {
-  // janderson - demo
-  public UserPassBasic = 'Basic amFuZGVyc29uOmRlbW8=';
+  // janderson:demo = amFuZGVyc29uOmRlbW8=
+  // add your local user:pass here
+  public UserPassBasic = 'Basic ' + btoa('janderson:demo');
   // HS-Services
   public ServicePassBasic = '';
 }

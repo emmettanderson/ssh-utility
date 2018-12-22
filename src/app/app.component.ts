@@ -1,7 +1,7 @@
-import { Component, ChangeDetectorRef, Input, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, ChangeDetectorRef, Input, OnInit, ViewChild, ElementRef, Inject } from '@angular/core';
 import { HistoryList } from './models/history-list';
-import { CommandList } from './models/command-list.model';
-import { FileList, FileArray } from './models/file-list.model';
+import { OutputDisplayComponent } from './output-display/output-display.component';
+import { FileArray } from './models/file-list.model';
 import { SessionLog } from './models/submit.model';
 import { SubmitService } from './api/submit.service';
 import { SubmitList } from './models/submit.model';
@@ -28,6 +28,7 @@ export class AppComponent implements OnInit {
   DestFileList: string;
   Submitted: any;
   Interval: any;
+  outputDisplayComponent: OutputDisplayComponent;
 
   @Input() SubmitList: SubmitList;
   @ViewChild('description') description: ElementRef;
@@ -35,10 +36,8 @@ export class AppComponent implements OnInit {
   constructor(
     private _submitService: SubmitService
     // private _changeDetectorRef: ChangeDetectorRef
-  ) {
-    // this._changeDetectorRef.detectChanges();
-    // event.stopPropagation();
-  }
+  ) { }
+
   ngOnInit() {
     this.SubmitList = new SubmitList;
   }
@@ -55,6 +54,7 @@ export class AppComponent implements OnInit {
     this.description.nativeElement.value = historylist['description'];
     this.LogRowId = historylist['rowId'];
     this.ProcessComplete = '1';
+    this.Submitted = '';
   }
   updateCommandList(commandAry: string[]) {
     // const commandAry = commandList.map(command => command.CommandString);

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2017.1.1 (Build 111_0_17521U)" ts="2018-12-21 12:23:40">
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2017.1.1 (Build 111_0_17521U)" ts="2018-12-21 19:42:36">
 <Class name="CUSTOM.CORE.REST.SSHToolUtils">
 <Super>%CSP.REST</Super>
-<TimeChanged>65002,68547.547555</TimeChanged>
+<TimeChanged>65003,56968.253122</TimeChanged>
 <TimeCreated>64999,56985</TimeCreated>
 
 <Parameter name="HandleCorsRequest">
@@ -47,7 +47,11 @@ This UrlMap maps http requests to the classmethod to which it should be dispatch
 	Set LogObject.LogTime = $Piece($Horolog,",",2)
 	
 	Set JsonPost = %request.Content.Read()
-	Do ..LogEntry(.LogObject, "Post From Application: "_JsonPost)
+	
+	Set LogJsonPost = $Replace(JsonPost,""",""",""","_$C(10)_"""")           // Add new line after each key:value pair
+	Set LogJsonPost = $Replace(LogJsonPost,"{",$C(10)_"{"_$C(10))            // Add new line before/after open curly brace
+	Set LogJsonPost = $Replace(LogJsonPost,"}",$C(10)_"}"_$C(10))            // Add new line before/after close curly brace
+	Do ..LogEntry(.LogObject, "Post From Application: "_LogJsonPost)
 	
 	Set Status = %request.Content.Rewind()
 	
@@ -452,9 +456,8 @@ Need to create credentials on Local AG production for SSHLogin and ADLogin</Desc
 			Set CommandString = CommandString_Command_"' | csession "_Host_" -U "_Namespace
 			
 			Set Command = originalCommand
-			
-			// $Replace(CommandString, HSCredentials.Password, "******")
-			Set LogString = Target_": Executing Command >>>> "_CommandString
+			 
+			Set LogString = Target_": Executing Command >>>> "_$Replace(CommandString, HSCredentials.Password, "******")
 			Do ..LogEntry(.LogObject, LogString)
 		
 			Set Status = sshObject.Execute(CommandString,.tDevice)
@@ -492,12 +495,12 @@ Need to create credentials on Local AG production for SSHLogin and ADLogin</Desc
 		Set Error = $ZE
 		Set LogString = "******* Process exited on Error: "_Error_$C(13,10)
 	}
+	
+	If $IsObject(sftpObject) Set Status = sftpObject.CloseSFTP()
 
 	Set LogString = " Process Complete..."
 	Do ..LogEntry(.LogObject, LogString, 1)
 	
-	Set Status = sftpObject.CloseSFTP()
-
 	Quit Status
 ]]></Implementation>
 </Method>
@@ -595,7 +598,6 @@ Need to create credentials on Local AG production for SSHLogin and ADLogin</Desc
 	Set LogObject.SessionLog = LogObject.SessionLog_$c(13,10)_$ZDT($Horolog,8,2)_": "_LogString
 	Set LogObject.ProcessComplete = ProcessComplete
 	Set Status = LogObject.%Save()
-	Set ^ZJA($zn,"log",$i(^ZJA)) = $ZDT($Horolog,8,2)_": "_LogString
 	Quit
 ]]></Implementation>
 </Method>

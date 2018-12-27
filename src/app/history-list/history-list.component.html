@@ -7,43 +7,46 @@
           hover='true'
           class='mat-elevation-z8'
           dense
-          matSort>
+          matSort
+          matSortActive='LogDate'
+          matSortDirection='desc'
+      >
       <ng-container matColumnDef='logDate'>
         <th mat-header-cell *matHeaderCellDef mat-sort-header> Time </th>
         <td mat-cell
             *matCellDef='let element'
             style='width:75px;'
-            ><span>{{element.logDate}} {{element.logTime}}</span></td>
+            ><span>{{element.LogDate}} {{element.LogTime}}</span></td>
       </ng-container>
       <ng-container matColumnDef='description'>
           <th mat-header-cell *matHeaderCellDef mat-sort-header> Description </th>
-          <td mat-cell *matCellDef='let element'><span>{{element.description}}</span> </td>
+          <td mat-cell *matCellDef='let element'><span>{{element.Description}}</span> </td>
         </ng-container>
       <ng-container matColumnDef='commandList'>
         <th mat-header-cell *matHeaderCellDef> Commands </th>
         <td mat-cell
             *matCellDef='let element'
-            title='{{element.commandList}}'
-            ><span>{{element.commandList}} </span></td>
+            title='{{element.CommandStringList}}'
+            ><span>{{element.CommandStringList}} </span></td>
       </ng-container>
       <ng-container matColumnDef='fileList'>
         <th mat-header-cell *matHeaderCellDef mat-sort-header> File List </th>
         <td mat-cell *matCellDef='let element'>
-          <span>{{element.srcFileList}}</span>
-          <span>{{element.destFileList}}</span>
+          <span>{{element.SourceFileList}}</span>
+          <span>{{element.DestinationFileList}}</span>
         </td>
       </ng-container>
       <ng-container matColumnDef='targetGroup' >
           <th mat-header-cell *matHeaderCellDef
               mat-sort-header style='max-width: 100px'> Target Group </th>
           <td mat-cell *matCellDef='let element'
-              style='max-width: 100px'><span>{{element.targetGroup}}</span></td>
+              style='max-width: 100px'><span>{{element.TargetGroup}}</span></td>
       </ng-container>
       <ng-container matColumnDef='removeRecord'>
           <th mat-header-cell *matHeaderCellDef></th>
           <td mat-cell
              *matCellDef='let element'
-             (click)='removeRecord($event,element.rowId);'>
+             (click)='removeRecord($event,element.RowId);'>
             <i class='fa fa-remove'></i>
           </td>
       </ng-container>

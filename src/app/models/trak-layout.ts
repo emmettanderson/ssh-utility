@@ -3,10 +3,10 @@ export class TrakLayoutFile {
   Id: number;
   FileName: string;
   UserName: string;
-  LayoutItemList: LayoutItemList;
+  LayoutItemList: LayoutItemArray;
 }
 
-export class LayoutItemList {
+export class LayoutItemArray {
   LayoutItem: LayoutItem;
 }
 

@@ -9,14 +9,14 @@ import { Observable } from 'rxjs/Observable';
 import 'rxjs/add/observable/of';
 
 export interface HistoryListInt {
-  rowId: string;
-  logDate: string;
-  logTime: string;
-  description: string; // need to add to table
-  commandList: any;
-  srcFileList: any;
-  destFileList: any;
-  targetGroup: string;
+  RowId: string;
+  LogDate: string;
+  LogTime: string;
+  Description: string;
+  CommandStringList: any;
+  SourceFileList: any;
+  DestinationFileList: any;
+  TargetGroup: string;
 }
 
 @Component({
@@ -36,7 +36,7 @@ export class HistoryListComponent implements OnInit, AfterViewInit, OnChanges {
   message: any = [];
 
   public displayedColumns: string[] = ['logDate', 'description', 'commandList', 'fileList', 'targetGroup', 'removeRecord'];
-  dataSource: MatTableDataSource<HistoryListInt> = new MatTableDataSource();
+  dataSource: MatTableDataSource<HistoryList> = new MatTableDataSource();
 
   @ViewChild(MatPaginator) paginator: MatPaginator;
   @ViewChild(MatSort) sort: MatSort;

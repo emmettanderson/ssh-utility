@@ -103,6 +103,7 @@ h3 {
   display: block;
   word-break: break-all;
   text-overflow: ellipsis;
+  font-size: 12px;
 }
 
 .compright {

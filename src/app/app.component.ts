@@ -43,21 +43,29 @@ export class AppComponent implements OnInit {
   }
 
   eventFromChild(historylist: HistoryList[]) {
-    console.log('app eventFromChild: GroupName: ' + historylist['targetGroup'] + '\nCommandList: ' + historylist['commandList']);
-    console.log('app eventFromChild: destFileList: ' + historylist['destFileList']);
+    console.log('app eventFromChild: GroupName: ' + historylist['TargetGroup'] + '\nCommandList: ' + historylist['commandList']);
+    console.log('app eventFromChild: DestinationFileList: ' + historylist['DestinationFileList']);
     // this.SubmitList = new SubmitList;
-    this.SubmitList.TargetGroup = historylist['targetGroup'];
-    this.SubmitList.CommandStringList = historylist['commandList'];
-    this.SubmitList.SourceFileList = historylist['srcFileList'];
-    this.SubmitList.DestinationFileList = historylist['destFileList'];
-    this.SubmitList.Description = historylist['description'];
-    this.description.nativeElement.value = historylist['description'];
-    this.LogRowId = historylist['rowId'];
+    for (const prop in historylist) {
+      if (typeof historylist[prop] !== 'undefined') {
+        this.SubmitList[prop] = historylist[prop];
+      }
+    }
+
+    /*
+    this.SubmitList.TargetGroup = historylist['TargetGroup'];
+    this.SubmitList.CommandStringList = historylist['CommandStringList'];
+    this.SubmitList.SourceFileList = historylist['SourceFileList'];
+    this.SubmitList.DestinationFileList = historylist['DestinationFileList'];
+    this.SubmitList.Description = historylist['Description'];
+    */
+    this.description.nativeElement.value = historylist['Description'];
+    this.LogRowId = historylist['RowId'];
     this.ProcessComplete = '1';
     this.Submitted = '';
   }
+
   updateCommandList(commandAry: string[]) {
-    // const commandAry = commandList.map(command => command.CommandString);
     this.SubmitList.CommandStringList = commandAry.join('\n');
     console.log('app updateCommandList: before: ' + commandAry + '\nafter: ' + this.SubmitList.CommandStringList);
   }
@@ -91,6 +99,7 @@ export class AppComponent implements OnInit {
     this.SessionLog.ProcessComplete = '0';
     this.SessionLog.SessionLog = '';
     this.Interval = '';
+    this.LogRowId = '';
     this.SubmitList.Description = this.description.nativeElement.value;
     this._submitService.submitList(this.SubmitList).subscribe(data => {
         this.LogRowId = data.LogRowId;

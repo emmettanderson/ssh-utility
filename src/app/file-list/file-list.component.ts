@@ -55,10 +55,10 @@ export class FileListComponent implements OnInit, OnChanges {
       this.srcInput.nativeElement.value = '';
       this.destInput.nativeElement.value = '';
     }
-    if (onchangeflag !== 1) {
+    // if (onchangeflag !== 1) {
       const fileAryObj = this.updateFileAry(this);
       this.sendDataToParent.emit(fileAryObj);
-    }
+    // }
   }
 
   onFileInput(event) {

@@ -35,7 +35,6 @@ export class TargetListComponent implements OnInit, OnChanges {
   ) { }
 
   ngOnChanges(changes: {[propKey: string]: SimpleChange}) {
-    const log: string[] = [];
     console.log('change log: ' + changes['GroupName'].currentValue);
     if (typeof changes['GroupName'].currentValue !== 'undefined') {
       this.onChangeTargetGroupHandler(changes['GroupName'].currentValue);

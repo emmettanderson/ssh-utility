@@ -41,35 +41,35 @@ export class TrakLayoutService {
   public getChangeTypeList() {
     console.log('getChangeTypeList service headers: ' + this._headers);
     return this.http
-      .get<CodeTable>(this.actionUrl, this._headers)
+      .get<CodeTable[]>(this.actionUrl, this._headers)
       .catch(this.errorHandler);
   }
 
   public getComponentList() {
     console.log('getComponentList service headers: ' + this._headers);
     return this.http
-      .get<SimpleRecord>(this.actionUrl, this._headers)
+      .get<SimpleRecord[]>(this.actionUrl, this._headers)
       .catch(this.errorHandler);
   }
 
   public getContextList(Component: SimpleRecord) {
     console.log('getContextList service headers: ' + Component.Name);
     return this.http
-      .get<ContextItem>(this.actionUrl + 'getcontextlist/' + Component.RowId, this._headers)
+      .get<ContextItem[]>(this.actionUrl + 'getcontextlist/' + Component.RowId, this._headers)
       .catch(this.errorHandler);
   }
 
   public getChartBookList() {
     console.log('getChartBookList service headers: ' + this._headers);
     return this.http
-      .get<SimpleRecord>(this.actionUrl, this._headers)
+      .get<SimpleRecord[]>(this.actionUrl, this._headers)
       .catch(this.errorHandler);
   }
 
   public getChartList(ChartBook: SimpleRecord) {
     console.log('getChartList service headers: ' + ChartBook.Name);
     return this.http
-      .get<ChartItem>(this.actionUrl + 'getchartlist/' + ChartBook.RowId, this._headers)
+      .get<ChartItem[]>(this.actionUrl + 'getchartlist/' + ChartBook.RowId, this._headers)
       .catch(this.errorHandler);
   }
 }

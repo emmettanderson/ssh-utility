@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2017.1.1 (Build 111_0_17521U)" ts="2018-12-21 19:42:36">
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2017.1.1 (Build 111_0_17521U)" ts="2018-12-27 19:37:02">
 <Class name="CUSTOM.CORE.REST.SSHToolUtils">
 <Super>%CSP.REST</Super>
-<TimeChanged>65003,56968.253122</TimeChanged>
+<TimeChanged>65009,65434.852143</TimeChanged>
 <TimeCreated>64999,56985</TimeCreated>
 
 <Parameter name="HandleCorsRequest">
@@ -43,14 +43,12 @@ This UrlMap maps http requests to the classmethod to which it should be dispatch
 	
 	#; Store session variables to Log class
 	Set LogObject = ##Class(CUSTOM.CORE.Util.SSHTool.Log).%New()
-	Set LogObject.LogDate = +$Horolog
-	Set LogObject.LogTime = $Piece($Horolog,",",2)
-	
 	Set JsonPost = %request.Content.Read()
 	
 	Set LogJsonPost = $Replace(JsonPost,""",""",""","_$C(10)_"""")           // Add new line after each key:value pair
 	Set LogJsonPost = $Replace(LogJsonPost,"{",$C(10)_"{"_$C(10))            // Add new line before/after open curly brace
 	Set LogJsonPost = $Replace(LogJsonPost,"}",$C(10)_"}"_$C(10))            // Add new line before/after close curly brace
+	
 	Do ..LogEntry(.LogObject, "Post From Application: "_LogJsonPost)
 	
 	Set Status = %request.Content.Rewind()
@@ -60,6 +58,11 @@ This UrlMap maps http requests to the classmethod to which it should be dispatch
 	For {
 		Set Name = $Order(tObject.%data(Name))
 		Quit:Name=""
+		
+		If Name = "SessionLog" Continue
+		
+		#; Check if property exists
+		Try {Set $Property(LogObject, Name) = ""} Catch {Continue}
 		
 		Set Value = tObject.%data(Name)
 		If Value = "" Continue
@@ -74,6 +77,10 @@ This UrlMap maps http requests to the classmethod to which it should be dispatch
 			Set $Property(LogObject,Name) = Value
 		}
 	}
+	
+	Set LogObject.LogDate = +$Horolog
+	Set LogObject.LogTime = $Piece($Horolog,",",2)
+
 	Set Status = LogObject.%Save()
 	Write "{""LogRowId"":"""_LogObject.%Id()_"""}"
 	
@@ -94,11 +101,12 @@ This UrlMap maps http requests to the classmethod to which it should be dispatch
 	If CodeString = "" Quit Status
 	
 	Try {
+		Set CodeString = $System.Encryption.Base64Decode(CodeString)
+		
 		If $Extract(CodeString) '= $C(9) {
 			Set CodeString = $C(9)_CodeString
 		}
 		Kill Error
-		S ^ZJA($zn,"CheckSyntax",$h,"Code") = CodeString
 		Set Status = ##Class(%Routine).CheckSyntax(CodeString, .Error)
 		If $$$ISERR(Status) {
 			Set Status = $Get(Error(1))
@@ -106,8 +114,6 @@ This UrlMap maps http requests to the classmethod to which it should be dispatch
 			Set Status = "1"
 		}
 	} Catch(error) {Kill error Set $ZE="" }
-	m ^ZJA($zn,"CheckSyntax",$h,"%request.Data")=%request.Data
-	//m ^ZJA($zn,"CheckSyntax",$h,"%request.CgiEnvs")=%request.CgiEnvs
 	Write "{""summary"":"""_..FormatJSONValueString(Status)_"""}"
 	Set Status = ""
 	Quit $$$OK
@@ -265,6 +271,8 @@ If RowID passed, remove the row and return history list</Description>
 <ProcedureBlock>0</ProcedureBlock>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
+	#Dim PropObject As %Dictionary.PropertyDefinition
+	
 	Set Status = $$$OK
 	If RowId'="" {
 		Set Status = ##Class(CUSTOM.CORE.Util.SSHTool.Log).%DeleteId(RowId)
@@ -280,6 +288,7 @@ If RowID passed, remove the row and return history list</Description>
 	
 	Set tJsonStream = ##Class(%Stream.TmpCharacter).%New()
 	Set ProxyObject = ##Class(%ZEN.proxyObject).%New()
+	Set ClassDef = ##Class(%Dictionary.ClassDefinition).%OpenId("CUSTOM.CORE.Util.SSHTool.Log")
 	
 	For {
 		&SQL(FETCH GetHistoryList INTO :RowId)
@@ -288,15 +297,23 @@ If RowID passed, remove the row and return history list</Description>
 		Set LogObject = ##Class(CUSTOM.CORE.Util.SSHTool.Log).%OpenId(RowId)
 		If '$IsObject(LogObject) Continue
 		
-		Set ProxyObject.rowId = RowId
-		Set ProxyObject.logDate = $ZD(LogObject.LogDate,8)
-		Set ProxyObject.logTime = $ZT(LogObject.LogTime,2)
-		Set ProxyObject.description = LogObject.Description
-		Set ProxyObject.commandList = $ListToString(LogObject.CommandStringList, $C(10))
-		Set ProxyObject.srcFileList = $ListToString(LogObject.SourceFileList, $C(10))
-		Set ProxyObject.destFileList = $ListToString(LogObject.DestinationFileList, $C(10))
-		Set ProxyObject.targetGroup = LogObject.TargetGroup.GroupName
+		Set ProxyObject.RowId = RowId
 		
+		For Index = 1:1:ClassDef.Properties.Count() {
+			Set PropObject = ClassDef.Properties.GetAt(Index)
+			If PropObject.Name = "SessionLog" Continue
+			
+			If $Property(LogObject, PropObject.Name) = "" {
+				Set $Property(ProxyObject, PropObject.Name) = "" Continue
+			}
+			Set $Property(ProxyObject, PropObject.Name) = $Case(PropObject.Type,
+				"%List":$ListToString($Property(LogObject, PropObject.Name)),
+				"%Date":$ZD($Property(LogObject, PropObject.Name),8),
+				"%Time":$ZT($Property(LogObject, PropObject.Name),2),
+				"CUSTOM.CORE.Util.SSHTool.TargetGroupConfig":LogObject.TargetGroup.GroupName,
+				:$Property(LogObject, PropObject.Name)
+			)
+		}
 		Set Status = ##class(%ZEN.Auxiliary.jsonProvider).%WriteJSONStreamFromObject(tJsonStream,ProxyObject,,,0,"") 
 	}
 	&SQL(CLOSE GetHistoryList)

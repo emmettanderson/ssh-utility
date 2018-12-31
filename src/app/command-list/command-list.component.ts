@@ -75,7 +75,6 @@ export class CommandListComponent implements OnInit, OnChanges {
     console.log('commandAry edit: index: ' + index);
   }
 
-
   ngOnInit() {
     this.syntaxCheck = {'summary': '1'};
     // this.data.currentMessage.subscribe(message => this.message = message);

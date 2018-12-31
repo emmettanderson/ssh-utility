@@ -1,3 +1,169 @@
-<p>
-  trak-layout works!
-</p>
+<div class='row'>
+  <div class='column'>
+    <span style='color: #3491d4;'>Trak Layout Patch</span>
+    <div style='float: right; margin-top: 3px; margin-right: 3px;'>
+      <button
+          mat-raised-button
+          style='margin-left: 10px; vertical-align: top;'
+          color='primary'
+          (click)='onClickSaveLayoutFile($event)'>Save Patch
+      </button>
+      <button
+          mat-raised-button
+          #applybutton
+          [disabled]='true'
+          style='margin-left: 10px; vertical-align: top;'
+          color='primary'
+          (click)='onClickApplyPatchFile($event)'>Apply
+      </button>
+    </div>
+    <mat-form-field class='example-full-width'>
+      <input matInput
+             required='true'
+             dense
+             placeholder='Patch File Name'
+             #filename>
+    </mat-form-field>
+  </div>
+</div>
+<div class='row'>
+  <div class='column'>
+    <mat-form-field shouldLabelFloat=0>
+      <mat-select
+          #changetypesel
+          placeholder='Select Change Type'
+          ariaLabel=''
+          (selectionChange)='onSelectChangeType($event)'>
+        <mat-option
+            *ngFor='let changetype of ChangeType'
+            [value]='changetype'>
+             {{changetype}}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+  <div #chartbookdiv class='column' style='display: none'>
+    <mat-form-field shouldLabelFloat=0>
+      <mat-select
+        #chartbook
+        placeholder='Select ChartBook'
+        ariaLabel=''
+        (selectionChange)='onSelectChartBook($event)'>
+        <mat-option
+          *ngFor='let chartbook of ChartBookItems'
+          [value]='chartbook.RowId'>
+            {{chartbook.Name}}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field shouldLabelFloat=0>
+      <mat-select
+        #chart
+        placeholder='Select Chart'
+        ariaLabel=''
+        (selectionChange)='onSelectChartItem($event)'>
+        <mat-option
+          *ngFor='let chart of ChartItems'
+          [value]='chart.ChartId'>
+            {{chart.ChartName}}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+  <div #componentdiv class='column' style='display: none'>
+    <mat-form-field shouldLabelFloat=0>
+      <mat-select
+        #component
+        placeholder='Select Component'
+        ariaLabel=''
+        (selectionChange)='onSelectComponentItem($event)'>
+          <mat-option
+            *ngFor='let component of ComponentItems'
+            [value]='component.RowId'>
+              {{component.Name}}
+          </mat-option>
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field shouldLabelFloat=0>
+      <mat-select
+        #context
+        placeholder='Select Context'
+        ariaLabel=''
+        (selectionChange)='onSelectContextItem($event)'>
+          <mat-option
+            *ngFor='let context of ContextItems'
+            [value]='context.Context'>
+              {{context.Context}}
+          </mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+</div>
+<br/>
+<div class='row'>
+  <div id='patchlistdiv' class='column'>
+    <mat-list dense>
+        <span style='color: #3491d4; font-size: 13px; vertical-align: top;'>Patch Item List</span>
+      <mat-list-item
+        *ngFor='let patchitem of LayoutItemArray; let i=index'
+        style='height: 40px !important;'>
+        <span class='codestyle' style='width:90%; word-wrap: break-word;'>
+          {{patchitem.ChangeType}}: {{patchitem.Description}}
+        </span>
+        <span style='display: inline-flex;'>
+          <i (click)='removeItem(i)' class='fa fa-remove'></i>
+        </span>
+      </mat-list-item>
+    </mat-list>
+  </div>
+</div>
+
+<!--
+    <br/>
+<div class='row' style='float: right'>
+  <div class='column'>
+    <button
+        mat-raised-button
+        style='margin-left: 10px; vertical-align: top;'
+        color='primary'
+        (click)='onClickSaveLayoutFile($event)'>Save Patch
+    </button>
+    <button
+        mat-raised-button
+        #applybutton
+        [disabled]='true'
+        style='margin-left: 10px; vertical-align: top;'
+        color='primary'
+        (click)='onClickApplyPatchFile($event)'>Apply
+    </button>
+  </div>
+</div>
+<div class='row'>
+  <div id='filelistdiv'>
+    <mat-list dense span='margin-top:2em'>
+      <mat-list-item *ngFor='let srcfile of srcFileAry;let i=index;'>
+        <p mat-line>
+          <span class='codestyle'
+                style='word-wrap: break-word;'>
+                Source: {{srcfile}}
+          </span>
+        </p>
+        <p mat-line>
+          <span class='codestyle'
+                style='word-wrap: break-word;'>
+                    Dest: {{destFileAry[i]}}
+          </span>
+          <span style='float: right;position: relative;top: -18px;'>
+            <button mat-icon-button>
+              <i (click)='editItem(i)' class='fa fa-edit'></i>
+            </button>
+            <button mat-icon-button>
+              <i (click)='removeItem(i)' class='fa fa-remove'></i>
+            </button>
+          </span>
+        </p>
+      </mat-list-item>
+    </mat-list>
+  </div>
+</div>
+-->

@@ -12,6 +12,7 @@ import { MatTableModule,
          MatIconModule,
          MatSelectModule,
          MatDialogModule,
+         MatAutocompleteModule,
          MatButtonModule} from '@angular/material';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { NgSelectModule } from '@ng-select/ng-select';
@@ -58,6 +59,7 @@ import { TrakLayoutComponent } from './trak-layout/trak-layout.component';
     MatCheckboxModule,
     MatIconModule,
     MatDialogModule,
+    MatAutocompleteModule,
     ReactiveFormsModule,
     NgSelectModule
   ],

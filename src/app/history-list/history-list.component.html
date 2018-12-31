@@ -15,19 +15,23 @@
         <th mat-header-cell *matHeaderCellDef mat-sort-header> Time </th>
         <td mat-cell
             *matCellDef='let element'
-            style='width:75px;'
-            ><span>{{element.LogDate}} {{element.LogTime}}</span></td>
+            style='width:75px;'>
+          <span>{{element.LogDate}} {{element.LogTime}}</span>
+        </td>
       </ng-container>
       <ng-container matColumnDef='description'>
           <th mat-header-cell *matHeaderCellDef mat-sort-header> Description </th>
-          <td mat-cell *matCellDef='let element'><span>{{element.Description}}</span> </td>
+          <td mat-cell *matCellDef='let element'>
+            <span>{{element.Description}}</span>
+          </td>
         </ng-container>
       <ng-container matColumnDef='commandList'>
         <th mat-header-cell *matHeaderCellDef> Commands </th>
         <td mat-cell
             *matCellDef='let element'
-            title='{{element.CommandStringList}}'
-            ><span>{{element.CommandStringList}} </span></td>
+            title='{{element.CommandStringList}}'>
+          <span>{{element.CommandStringList}} </span>
+        </td>
       </ng-container>
       <ng-container matColumnDef='fileList'>
         <th mat-header-cell *matHeaderCellDef mat-sort-header> File List </th>
@@ -40,7 +44,9 @@
           <th mat-header-cell *matHeaderCellDef
               mat-sort-header style='max-width: 100px'> Target Group </th>
           <td mat-cell *matCellDef='let element'
-              style='max-width: 100px'><span>{{element.TargetGroup}}</span></td>
+              style='max-width: 100px'>
+            <span>{{element.TargetGroup}}</span>
+          </td>
       </ng-container>
       <ng-container matColumnDef='removeRecord'>
           <th mat-header-cell *matHeaderCellDef></th>
@@ -51,11 +57,11 @@
           </td>
       </ng-container>
       <tr mat-header-row
-          *matHeaderRowDef='displayedColumns'></tr>
+          *matHeaderRowDef='displayedColumns'>
+      </tr>
       <tr mat-row
           *matRowDef='let row; columns: displayedColumns;'
-          (click)='selectRow(row)'
-          >
+          (click)='selectRow(row)'>
       </tr>
     </table>
     <mat-paginator #paginator

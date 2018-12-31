@@ -106,13 +106,21 @@ td.mat-cell span {
   text-overflow: ellipsis;
   font-size: .75em !important;
   padding: 5px !important;
-  vertical-align: top;
+  vertical-align: middle !important;
   /*word-break: break-all;*/
 }
 .mat-select {
   width: 98% !important;
   /*width: auto !important;*/
   border-color: #007bff !important;
+}
+
+.mat-row:nth-child(even){
+  background-color: honeydew;
+}
+
+.mat-row:nth-child(odd){
+  background-color: lightcyan;
 }
 
 .mat-list-item {

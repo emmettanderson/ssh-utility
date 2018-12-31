@@ -45,26 +45,21 @@ export class AppComponent implements OnInit {
   eventFromChild(historylist: HistoryList[]) {
     console.log('app eventFromChild: GroupName: ' + historylist['TargetGroup'] + '\nCommandList: ' + historylist['commandList']);
     console.log('app eventFromChild: DestinationFileList: ' + historylist['DestinationFileList']);
-    // this.SubmitList = new SubmitList;
+
     for (const prop in historylist) {
       if (typeof historylist[prop] !== 'undefined') {
         this.SubmitList[prop] = historylist[prop];
       }
     }
-
-    /*
-    this.SubmitList.TargetGroup = historylist['TargetGroup'];
-    this.SubmitList.CommandStringList = historylist['CommandStringList'];
-    this.SubmitList.SourceFileList = historylist['SourceFileList'];
-    this.SubmitList.DestinationFileList = historylist['DestinationFileList'];
-    this.SubmitList.Description = historylist['Description'];
-    */
     this.description.nativeElement.value = historylist['Description'];
     this.LogRowId = historylist['RowId'];
     this.ProcessComplete = '1';
     this.Submitted = '';
   }
-
+  updateApplyTrakLayout(event) {
+    this.addCommand(event);  // need to pass command as string
+    this.addFiles(event, event);
+  }
   updateCommandList(commandAry: string[]) {
     this.SubmitList.CommandStringList = commandAry.join('\n');
     console.log('app updateCommandList: before: ' + commandAry + '\nafter: ' + this.SubmitList.CommandStringList);
@@ -77,17 +72,27 @@ export class AppComponent implements OnInit {
       this.SubmitList.CommandStringList += command;
     }
   }
+  updateFileList(fileAry: FileArray) {
+    this.SubmitList.SourceFileList = fileAry.srcFileAry.join('\n');
+    this.SubmitList.DestinationFileList = fileAry.destFileAry.join('\n');
+    console.log('app updateFileList: src: ' + this.SubmitList.SourceFileList + '\ndest: ' + this.SubmitList.DestinationFileList);
+  }
+  addFiles(srcFile: string, destFile: string) {
+    console.log('app addFile: ' + srcFile + '\n' + destFile);
+    if (this.SubmitList.SourceFileList && this.SubmitList.SourceFileList !== '') {
+      this.SubmitList.SourceFileList += srcFile + '\n';
+      this.SubmitList.DestinationFileList += destFile + '\n';
+    } else {
+      this.SubmitList.DestinationFileList += destFile;
+    }
+  }
   updateSessionLog(comp) {
     this.SessionLogText = comp.SessionLog.SessionLog;
     this.ProcessComplete = comp.SessionLog.ProcessComplete;
     this.LogRowId = comp.LogRowId;
     this.Interval = comp.interval;
   }
-  updateFileList(fileAry: FileArray) {
-    this.SubmitList.SourceFileList = fileAry.srcFileAry.join('\n');
-    this.SubmitList.DestinationFileList = fileAry.destFileAry.join('\n');
-    console.log('app updateFileList: src: ' + this.SubmitList.SourceFileList + '\ndest: ' + this.SubmitList.DestinationFileList);
-  }
+
   updateTargetGroup(GroupName) {
     this.SubmitList.TargetGroup = GroupName;
     console.log('app updateTargetGroup: ' + GroupName);

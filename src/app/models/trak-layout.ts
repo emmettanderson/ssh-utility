@@ -1,3 +1,4 @@
+import { LayoutItemInt, LayoutItemArrayInt } from '../trak-layout/trak-layout.component';
 
 export class TrakLayoutFile {
   Id: number;
@@ -6,18 +7,18 @@ export class TrakLayoutFile {
   LayoutItemList: LayoutItemArray;
 }
 
-export class LayoutItemArray {
+export class LayoutItemArray implements LayoutItemArrayInt {
   LayoutItem: LayoutItem;
 }
 
-export class LayoutItem {
-  ChangeType: CodeTable;
+export class LayoutItem implements LayoutItemInt {
+  ChangeType: string;
   Description: string;
   LayoutItemType: CodeTable | ChartItem | ContextItem;
 }
 
 export class ChartItem {
-  ChartBook: SimpleRecord;
+  ChartBookId: string;
   ChartId: string;
   ChartName: string;
   ChartType: string | number;
@@ -30,8 +31,7 @@ export class ComponentItem {
 
 export class ContextItem {
   Context: string;
-  Component: SimpleRecord;
-  SiteCode: string | number;
+  ComponentId: string;
 }
 
 export class CodeTable {

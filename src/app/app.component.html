@@ -14,7 +14,7 @@
           style='margin-left: 10px; vertical-align: top;'
           color='primary'
           (click)='submit($event)'>Submit
-      </button>
+        </button>
       </li>
     </ul>
   </div>
@@ -39,6 +39,11 @@
             [destFileList]='SubmitList.DestinationFileList'
             (sendDataToParent)='updateFileList($event)'
             ></app-file-list>
+      </div>
+      <div class='container'>
+          <app-trak-layout
+            (sendDataToParent)='updateApplyTrakLayout($event)'
+          ></app-trak-layout>
       </div>
   </div>
   <div class='compright'>

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2017.1.1 (Build 111_0_17521U)" ts="2018-12-27 19:37:02">
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2017.1.1 (Build 111_0_17521U)" ts="2018-12-30 21:46:47">
 <Class name="CUSTOM.CORE.REST.SSHToolUtils">
 <Super>%CSP.REST</Super>
-<TimeChanged>65009,65434.852143</TimeChanged>
+<TimeChanged>65012,74928.455711</TimeChanged>
 <TimeCreated>64999,56985</TimeCreated>
 
 <Parameter name="HandleCorsRequest">
@@ -29,6 +29,12 @@ This UrlMap maps http requests to the classmethod to which it should be dispatch
 <Route Url="/submit/" Method="POST" Call="Submit"/>
 <Route Url="/srcfileinput/" Method="POST" Call="CopyFileToTempDirectory"/>
 <Route Url="/checksyntax/:CodeString" Method="GET" Call="CheckCodeSyntax"/>
+<Route Url="/traklayout/getchangetypes/" Method="GET" Call="CUSTOM.CORE.Util.TrakLayout.Utility:GetChangeTypes"/>
+<Route Url="/traklayout/getcomponents/" Method="GET" Call="CUSTOM.CORE.Util.TrakLayout.Utility:GetComponents"/>
+<Route Url="/traklayout/getcontexts/:ComponentId" Method="GET" Call="CUSTOM.CORE.Util.TrakLayout.Utility:GetContexts"/>
+<Route Url="/traklayout/getchartbooks/" Method="GET" Call="CUSTOM.CORE.Util.TrakLayout.Utility:GetChartBooks"/>
+<Route Url="/traklayout/getcharts/:ChartBookId" Method="GET" Call="CUSTOM.CORE.Util.TrakLayout.Utility:GetCharts"/>
+<Route Url="/traklayout/savelayoutfile/" Method="POST" Call="CUSTOM.CORE.Util.TrakLayout.Utility:SaveLayoutPatch"/>
 
 </Routes>
 ]]></Data>
@@ -142,7 +148,6 @@ This UrlMap maps http requests to the classmethod to which it should be dispatch
 		&SQL(FETCH GetTargetGroupList INTO :RowId,:GroupName)
 		If SQLCODE Quit
 		
-		//Write !,"RowId: ",RowId," GroupName: ",GroupName
 		Set ProxyObject.id = RowId
 		Set ProxyObject.GroupName = GroupName
 		Set Status = ##class(%ZEN.Auxiliary.jsonProvider).%WriteJSONStreamFromObject(tJsonStream,ProxyObject,,,0,"") 
@@ -648,7 +653,7 @@ Need to create credentials on Local AG production for SSHLogin and ADLogin</Desc
 <Description>
 This is a log of all previous submitted commands and target environments</Description>
 <Super>%Persistent</Super>
-<TimeChanged>64996,39860.098538</TimeChanged>
+<TimeChanged>65012,45333.603337</TimeChanged>
 <TimeCreated>64990,61937.055419</TimeCreated>
 
 <Property name="LogDate">
@@ -698,6 +703,11 @@ Destination Files sent to environments</Description>
 <InitialExpression>0</InitialExpression>
 </Property>
 
+<Property name="TrakLayoutFile">
+<Type>%String</Type>
+<Parameter name="MAXLEN" value="32000"/>
+</Property>
+
 <Index name="DateTime">
 <Properties>LogDate,LogTime</Properties>
 </Index>
@@ -743,6 +753,9 @@ Destination Files sent to environments</Description>
 <Value name="11">
 <Value>ProcessComplete</Value>
 </Value>
+<Value name="12">
+<Value>TrakLayoutFile</Value>
+</Value>
 </Data>
 </Storage>
 </Class>
@@ -750,7 +763,7 @@ Destination Files sent to environments</Description>
 
 <Class name="CUSTOM.CORE.Util.SSHTool.TargetConfig">
 <Super>%Persistent</Super>
-<TimeChanged>64998,68942.0313</TimeChanged>
+<TimeChanged>65012,48214.580612</TimeChanged>
 <TimeCreated>64990,58256.843916</TimeCreated>
 
 <Property name="HostName">
@@ -790,6 +803,17 @@ providing SSH access to this environment </Description>
 <Type>%String</Type>
 </Property>
 
+<Property name="DefaultHomeDirectory">
+<Description>
+Directory Path of users home directory (R/W accessible directory)
+Used to store Layout Patch xml files
+If property value = null:
+* Default Path (non-windows): "/tmp/"
+* Default Path (windows): "c:\Temp\"</Description>
+<Type>%String</Type>
+<Parameter name="MAXLEN" value="32000"/>
+</Property>
+
 <Index name="HostUrl">
 <Properties>HostUrl</Properties>
 <Unique>1</Unique>
@@ -801,10 +825,11 @@ providing SSH access to this environment </Description>
 </Index>
 
 <Method name="Populate">
+<Description>
+Northwell-specific default values</Description>
 <ClassMethod>1</ClassMethod>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
-	
 	Set Status = $$$OK
 	Set TargetList = $ListBuild("hshiedev01","hshieidev01","hshieqa01","hsagstage01","hsagstage04a","hsagstage04b","hsagprod01","hsagprod04a","hsagprod04b","hsagprod04c","hsagprod04d","hsregstage01","hsregprod01","hsedgestage01","hsedgeprod01")
 	Set DescList = $ListBuild("HIE DEV Server","HIE IDEV Server","HIE QA Server","Stage01 Access Gateway","Stage04-a Access Gateway","Stage04-b Access Gateway","Prod01 Access Gateway","Prod04-a Access Gateway","Prod04-b Access Gateway","Prod04-c Access Gateway","Prod04-d Access Gateway ","Stage Registry","Prod Registry","Stage Edge","Prod Edge")
@@ -814,7 +839,7 @@ providing SSH access to this environment </Description>
 		Set TargetUrl = Target_".nshs.edu"
 		Set Desc = $ListGet(DescList, Index)
 		Set HSInstallPath = "/app01/"_$ListGet(HSInstallPathList, Index)_"/hie/healthshare/"
-		
+		// Set DefaultHomeDir = "/tmp/traklayouts/"
 		Set Object = ..HostUrlOpen(TargetUrl)
 		If '$IsObject(Object) {
 			Set Object = ..%New()
@@ -859,6 +884,9 @@ providing SSH access to this environment </Description>
 </Value>
 <Value name="7">
 <Value>HSInstallPath</Value>
+</Value>
+<Value name="8">
+<Value>DefaultHomeDirectory</Value>
 </Value>
 </Data>
 </Storage>
@@ -943,13 +971,1437 @@ Default Populate for Northwell Health Implementation - Must Populate ..TargetCon
 </Class>
 
 
-<Project name="HieCOMMONLIBSSHToolsV1" LastModified="2018-12-13 19:14:33.94884">
+<Class name="CUSTOM.CORE.Util.TrakLayout.Configuration">
+<Super>%Persistent</Super>
+<TimeChanged>65012,50465.287616</TimeChanged>
+<TimeCreated>65012,42998.473332</TimeCreated>
+
+<Property name="LocalLayoutDirectory">
+<Description>
+Directory path where layout files should be stored</Description>
+<Type>%String</Type>
+<Parameter name="MAXLEN" value="32000"/>
+</Property>
+
+<Property name="ChangeTypeList">
+<Type>%List</Type>
+</Property>
+
+<Property name="SiteCode">
+<Type>%String</Type>
+<Required>1</Required>
+</Property>
+
+<Method name="Populate">
+<ClassMethod>1</ClassMethod>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set Status = $$$OK
+	
+	Set Object = ##Class(CUSTOM.CORE.Util.TrakLayout.Configuration).%OpenId(1)
+	If '$IsObject(Object) {
+		Set Object = ##Class(CUSTOM.CORE.Util.TrakLayout.Configuration).%New(1)
+	}
+	Set Object.SiteCode = "CUSTOM"
+	Set Object.LocalLayoutDirectory = "e:\access04\Layouts\"
+	Set Object.ChangeTypeList = $ListBuild("Components", "Charts", "Transforms", "Standard Types", "IconDefinitions")
+	Set Status = Object.%Save()
+	Quit Status
+]]></Implementation>
+</Method>
+
+<Storage name="Default">
+<Type>%Library.CacheStorage</Type>
+<DataLocation>^CUSTOM.CORE.UD1C.ConfigurationD</DataLocation>
+<DefaultData>ConfigurationDefaultData</DefaultData>
+<IdLocation>^CUSTOM.CORE.UD1C.ConfigurationD</IdLocation>
+<IndexLocation>^CUSTOM.CORE.UD1C.ConfigurationI</IndexLocation>
+<StreamLocation>^CUSTOM.CORE.UD1C.ConfigurationS</StreamLocation>
+<Data name="ConfigurationDefaultData">
+<Value name="1">
+<Value>%%CLASSNAME</Value>
+</Value>
+<Value name="2">
+<Value>LocalLayoutDirectory</Value>
+</Value>
+<Value name="3">
+<Value>ChangeType</Value>
+</Value>
+<Value name="4">
+<Value>ChangeTypeList</Value>
+</Value>
+<Value name="5">
+<Value>SiteCode</Value>
+</Value>
+</Data>
+</Storage>
+</Class>
+
+
+<Class name="CUSTOM.CORE.Util.TrakLayout.Utility">
+<Description>
+Custom Utils for saving/loading Trak Layout/Column/Row changes</Description>
+<Abstract>1</Abstract>
+<IncludeCode>HS.Common</IncludeCode>
+<TimeChanged>65012,78378.156516</TimeChanged>
+<TimeCreated>65012,48104.880692</TimeCreated>
+
+<Parameter name="UserList">
+<Default>janderson9,isrivastava,avudaim,mjackson10</Default>
+</Parameter>
+
+<Parameter name="SyncTarget">
+<Default>HSHIEIDEV01</Default>
+</Parameter>
+
+<Parameter name="SSHCredentials">
+<Default>SSHLogin</Default>
+</Parameter>
+
+<Parameter name="AGNamespace">
+<Default>access01,access04</Default>
+</Parameter>
+
+<Parameter name="SyncDir">
+<Default>/tmp/traklayoutsync/</Default>
+</Parameter>
+
+<Method name="ProcessSourceFile">
+<Description>
+Process submitted file</Description>
+<ClassMethod>1</ClassMethod>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+		Set StreamObject = $Get(%request.MimeData("FileStream",1))
+		If '$IsObject(StreamObject) Quit "No File Selected"
+		
+	  	Set Target = $Get(%request.Data("TargetSelect",1))
+	  	If Target = "" Quit "No Target Instance Selected"
+	  	
+	  	Set Username = $Get(%request.Data("sftpUsername",1))
+	  	If Username = "" Quit "No Username entered"
+	  	
+	  	Set Password = $Get(%request.Data("sftpPassword",1))
+	  	If Password = "" Quit "No Password entered"
+	  	
+	  	Set FileObject = ##class(%File).%New("temp"_StreamObject.FileName)
+	  	Do FileObject.Open("NRWS") 
+
+	  	Set Status = FileObject.CopyFrom(StreamObject)
+	  	If $$$ISERR(Status) {
+		  	Write "<br/><span>Copy Status: ",$System.Status.DisplayError(Status),"</span>"
+	  	}
+	  	Set Status = FileObject.%Save()
+		
+		#; FTP the file to the given HS instance
+		Set Status = ##Class(CUSTOM.Util.Trak.Layout).SftpPatchFile(FileObject,Target,Username,Password) 
+		
+		If Status {
+			Do FileObject.Close()
+			Set Status = ##Class(%File).Delete(FileObject.Name)
+		}
+		#; Set Status = ##Class(CUSTOM.Util.Trak.Layout).LoadComponentLayoutPatch(FileObject.Name)
+		Quit Status
+]]></Implementation>
+</Method>
+
+<Method name="GetChangeTypes">
+<ClassMethod>1</ClassMethod>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set Status = $$$OK
+	Set ConfigObject = ##Class(CUSTOM.CORE.Util.TrakLayout.Configuration).%OpenId(1)
+	If '$IsObject(ConfigObject) Quit 0
+	
+	Write "["""_$ListToString(ConfigObject.ChangeTypeList,""",""")_"""]"
+	Quit Status
+]]></Implementation>
+</Method>
+
+<Method name="GetComponents">
+<Description>
+output JSON for ChartBook RowId and Description</Description>
+<ClassMethod>1</ClassMethod>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set Status = $$$OK
+	
+	Set ConfigObject = ##Class(CUSTOM.CORE.Util.TrakLayout.Configuration).%OpenId(1)
+	If '$IsObject(ConfigObject) Quit 0
+	
+	Set tJsonStream = ##Class(%Stream.TmpCharacter).%New()
+	Set ProxyObject = ##Class(%ZEN.proxyObject).%New()
+	
+	Set ComponentIdList = ..GetComponentIdList(ConfigObject.SiteCode)
+	If ComponentIdList="" Quit 0
+	
+	For Index = 1:1:$ListLength(ComponentIdList) {
+		Set CompObject = ##Class(websys.Component).%OpenId($ListGet(ComponentIdList, Index))
+		If '$IsObject(CompObject) Continue
+		
+		Set ProxyObject.RowId = CompObject.%Id()
+		Set ProxyObject.Name = CompObject.Name
+		
+		Set Status = ##class(%ZEN.Auxiliary.jsonProvider).%WriteJSONStreamFromObject(tJsonStream, ProxyObject,,,0,"") 
+	}
+
+	If $IsObject(tJsonStream) {
+		Do tJsonStream.Rewind()
+		Set JsonString = tJsonStream.Read()
+		Write "["_$Replace(JsonString,"}{","},{")_"]"
+	}
+	Quit Status
+]]></Implementation>
+</Method>
+
+<Method name="GetContexts">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>ComponentID:%String=""</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set Status = $$$OK
+	If ComponentID="" Quit 0
+	
+	Set ConfigObject = ##Class(CUSTOM.CORE.Util.TrakLayout.Configuration).%OpenId(1)
+	If '$IsObject(ConfigObject) Quit 0
+
+	Set ContextList = ..GetContextListByComp(ComponentID, ConfigObject.SiteCode)
+	If ContextList="" Quit 0
+	
+	Set tJsonStream = ##Class(%Stream.TmpCharacter).%New()
+	Set ProxyObject = ##Class(%ZEN.proxyObject).%New()
+	
+	For Index = 1:1:$ListLength(ContextList) {
+		Set Context = $ListGet(ContextList, Index)
+		If Context="" Continue
+		
+		Set ProxyObject.Context = Context
+		Set ProxyObject.ComponentId = ComponentID
+		
+		Set Status = ##class(%ZEN.Auxiliary.jsonProvider).%WriteJSONStreamFromObject(tJsonStream, ProxyObject,,,0,"") 
+	}
+
+	If $IsObject(tJsonStream) {
+		Do tJsonStream.Rewind()
+		Set JsonString = tJsonStream.Read()
+		Write "["_$Replace(JsonString,"}{","},{")_"]"
+	}
+	Quit Status
+]]></Implementation>
+</Method>
+
+<Method name="GetChartBooks">
+<Description>
+output JSON for ChartBook RowId and Description</Description>
+<ClassMethod>1</ClassMethod>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set Status = $$$OK
+
+	Set tJsonStream = ##Class(%Stream.TmpCharacter).%New()
+	Set ProxyObject = ##Class(%ZEN.proxyObject).%New()
+	
+	Set ChartBookIdList = ..GetChartBookIdList()
+	If ChartBookIdList="" Quit 0
+	
+	For Index = 1:1:$ListLength(ChartBookIdList) {
+		Set ChartBookObject = ##Class(epr.ChartBook).%OpenId($ListGet(ChartBookIdList, Index))
+		If '$IsObject(ChartBookObject) Continue
+		
+		Set ProxyObject.RowId = ChartBookObject.%Id()
+		Set ProxyObject.Name = ChartBookObject.Description
+		
+		Set Status = ##class(%ZEN.Auxiliary.jsonProvider).%WriteJSONStreamFromObject(tJsonStream,ProxyObject,,,0,"") 
+	}
+
+	If $IsObject(tJsonStream) {
+		Do tJsonStream.Rewind()
+		Set JsonString = tJsonStream.Read()
+		Write "["_$Replace(JsonString,"}{","},{")_"]"
+	}
+	Quit Status
+]]></Implementation>
+</Method>
+
+<Method name="GetChartBookIdList">
+<Description>
+Check Sync Status
+ClassMethod CheckSyncStatus(Environment As %String="", )
+Get $list of Chart Book IDs</Description>
+<ClassMethod>1</ClassMethod>
+<ReturnType>%List</ReturnType>
+<Implementation><![CDATA[
+	Set ChartBookIdList=""
+	
+	Set ChartBookID=""
+	For {
+		Set ChartBookID = $Order(^epr.ChartBookD(ChartBookID))
+		Quit:ChartBookID=""
+		
+		Set ChartBookIdList = ChartBookIdList_$ListBuild(ChartBookID)
+	}
+	Quit ChartBookIdList
+]]></Implementation>
+</Method>
+
+<Method name="GetChartIdList">
+<Description>
+Get $list of Chart Item IDs for given ChartBook</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>SiteCode:%String="CUSTOM",ChartBookID:%String=""</FormalSpec>
+<ReturnType>%List</ReturnType>
+<Implementation><![CDATA[
+	Set ChartIdList=""
+	Set ChartBookObj = ##Class(epr.ChartBook).%OpenId(ChartBookID)
+	If '$IsObject(ChartBookObj) Quit ""
+	
+	For Index = 1:1:ChartBookObj.ChartList.Count() {
+		Set ChartItemObj = ChartBookObj.ChartList.GetAt(Index)
+		If '$IsObject(ChartItemObj) Continue
+		
+		Set ChartIdList = ChartIdList_$ListBuild(ChartItemObj.%Id())
+	}
+	Quit ChartIdList
+]]></Implementation>
+</Method>
+
+<Method name="GetCharts">
+<Description>
+Output JSON for Charts</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>ChartBookID:%String=""</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set Status = $$$OK
+	If ChartBookID="" Quit 0
+	
+	Set ConfigObject = ##Class(CUSTOM.CORE.Util.TrakLayout.Configuration).%OpenId(1)
+	If '$IsObject(ConfigObject) Quit 0
+
+	Set ChartIdList = ..GetChartIdList(ConfigObject.SiteCode, ChartBookID)
+	If ChartIdList="" Quit 0
+	
+	Set tJsonStream = ##Class(%Stream.TmpCharacter).%New()
+	Set ProxyObject = ##Class(%ZEN.proxyObject).%New()
+	
+	For Index = 1:1:$ListLength(ChartIdList) {
+		Set ChartObject = ##Class(epr.Chart).%OpenId($ListGet(ChartIdList, Index))
+		If '$IsObject(ChartObject) Continue
+		
+		Set ChartName = ChartObject.Name
+		If ChartName="" Set ChartName = ChartObject.Caption
+		// Set ProxyObject.ChartBook.RowId = ChartBookID
+		Set ProxyObject.ChartBookId = ChartBookID
+		Set ProxyObject.ChartName = ChartName
+		Set ProxyObject.ChartId = ChartObject.%Id()
+		Set ProxyObject.ChartType = ChartObject.ChartType
+		
+		Set Status = ##class(%ZEN.Auxiliary.jsonProvider).%WriteJSONStreamFromObject(tJsonStream, ProxyObject,,,0,"") 
+	}
+
+	If $IsObject(tJsonStream) {
+		Do tJsonStream.Rewind()
+		Set JsonString = tJsonStream.Read()
+		Write "["_$Replace(JsonString,"}{","},{")_"]"
+	}
+	Quit Status
+]]></Implementation>
+</Method>
+
+<Method name="GetChartIdDescString">
+<Description>
+Get $list of ChartItem1_Delim2_ChartDesc_Delim1_ChartItem2... for given ChartBook - output to js</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>SiteCode:%String="CUSTOM",ChartBookID:%String="",Delim1:%String="^",Delim2:%String="|"</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	Set ChartIdDescString = ""
+	
+	Set ChartIdList = ##Class(CUSTOM.Util.Trak.Layout).GetChartIdList(SiteCode, ChartBookID)
+	For Index = 1:1:$ListLength(ChartIdList) {
+		Set ChartID = $ListGet(ChartIdList,Index)
+		If ChartID="" Continue
+		
+		Set ChartDesc = ##Class(epr.Chart).NameGetStored(ChartID)
+		If ChartDesc="" Continue
+		
+		Set ChartIdDescString = ChartIdDescString_$ListBuild(ChartID_Delim2_ChartDesc)
+	}
+	If $ListValid(ChartIdDescString) Set ChartIdDescString = $ListToString(ChartIdDescString,Delim1)
+	Quit $Zcvt(ChartIdDescString,"O","JS")
+]]></Implementation>
+</Method>
+
+<Method name="SftpPatchFile">
+<Description>
+SFTP HL7 File</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>FileObject:%File="",Target:%String="",Username:%String="",Password:%String=""</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set Status = $$$OK
+	If Target'["." Set Target = Target_".nshs.edu"
+	Set sshObject = ##class(%Net.SSH.Session).%New()
+ 	
+ 	#; CONNECT TO SSH SESSION
+	Set Status = sshObject.Connect(Target)
+ 	If $$$ISERR(Status) {
+		Write !,"Error connecting: ",Target,!,$$GetErrorText^%apiOBJ(Status)
+		Quit Status
+	} 
+	
+	#; AUTHENTICATE
+	Set Status = sshObject.AuthenticateWithUsername(Username,Password)
+	If $$$ISERR(Status) {
+		Write !,"Error authenticating: ",Username,!,$$GetErrorText^%apiOBJ(Status)
+		Quit Status
+	} 
+	
+	#; OPEN SFTP CONNECTION
+	Set Status = sshObject.OpenSFTP(.sftpObject)
+	If $$$ISERR(Status) {
+		Write !,"Error opening SFTP session: ",$$GetErrorText^%apiOBJ(Status)
+		Quit Status
+	} 
+	
+	#; PUT FILE ON TARGET SERVER
+	Set tFileName = $Extract(FileObject.GetFilename(FileObject.Name),5,999)
+	Set Status = sftpObject.Put(FileObject.Name,"/home/"_Username_"/"_tFileName)
+	If $$$ISERR(Status) {
+		Write !,"Error putting file: ",FileObject.Name,!,$$GetErrorText^%apiOBJ(Status)
+		Quit Status
+	} Else {		
+		Set Status = sftpObject.CloseSFTP()
+	}			
+	Quit Status
+]]></Implementation>
+</Method>
+
+<Method name="SyncLocalLayout">
+<Description>
+Sync Local Layout - called from task manager</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>LocalDir:%String="",ADUsername:%String=""</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	#Dim sftpObject As %Net.SSH.SFTP
+	
+	Set Status = $$$OK
+	
+	If '$Data(^websys.ConfigurationD) {
+		Write !,$ZDT($Horolog,8,2),?20,"Must run from an Access Gateway Namespace. Quitting."
+		Quit 0
+	}
+	 
+	If (",hshiedev01,hshieidev01,hshieqa01,hsagstage01,hsagprod01,") [ (","_$ZCVT($Piece($System,":",2),"L")_",") {
+		Write !,$ZDT($Horolog,8,2),?20,$ZCVT($Piece($System,":",2),"L")_" is an invalid system. "
+		Write "Please only run from your local sandbox. Quitting."
+		Quit 0
+	}
+	Write !,$ZDT($Horolog,8,2),?20,"**** SYNC PROCESS STARTING ****"
+	
+	Set tCredentials = ##class(Ens.Config.Credentials).%OpenId(..#SSHCredentials)
+	If '$IsObject(tCredentials) {
+		Write !,$ZDT($Horolog,8,2),?20,"No credentials found. Quitting."
+		Quit 0
+	}		
+	Set sshObject = ##class(%Net.SSH.Session).%New()
+ 	Write !,$ZDT($Horolog,8,2),?20,"Connecting to ",..#SyncTarget_".nshs.edu..."
+ 	
+ 	#; CONNECT TO SSH SESSION
+	Set Status = sshObject.Connect(..#SyncTarget_".nshs.edu")
+ 	If $$$ISERR(Status) {
+		Write !,$ZDT($Horolog,8,2),?20,"Error connecting: ",..#SyncTarget_".nshs.edu"
+		Write !,$ZDT($Horolog,8,2),?20,$$GetErrorText^%apiOBJ(Status),". Quitting."
+		Quit Status
+	} Else {
+		Write !,$ZDT($Horolog,8,2),?20,"Connected: ",..#SyncTarget_".nshs.edu"
+	}
+	
+	#; AUTHENTICATE
+	Set Status = sshObject.AuthenticateWithUsername(tCredentials.Username,tCredentials.Password)
+	If $$$ISERR(Status) {
+		Write !,$ZDT($Horolog,8,2),?20,"Error authenticating: ",tCredentials.Username
+		Write !,$ZDT($Horolog,8,2),?20,$$GetErrorText^%apiOBJ(Status),". Quitting."
+		Quit Status
+	} Else {
+		Write !,$ZDT($Horolog,8,2),?20,"Authenticated: ",tCredentials.Username
+	}
+	
+	#; OPEN SFTP CONNECTION
+	Set Status = sshObject.OpenSFTP(.sftpObject)
+	If $$$ISERR(Status) {
+		Write !,$ZDT($Horolog,8,2),?20,"Error opening SFTP session: ",$$GetErrorText^%apiOBJ(Status),". Quitting."
+		Quit Status
+	} Else {
+		Write !,$ZDT($Horolog,8,2),?20,"SFTP session opened... "
+	}
+
+	#; GET SYNC FILES ON TARGET SERVER
+	Kill FileList,Files
+	Set Status = sftpObject.Dir(..#SyncDir,.FileList,"*"_"_"_$ZCVT(ADUsername,"L")_"_SyncFile.xml")
+	If $$$ISERR(Status) {
+		Write !,$ZDT($Horolog,8,2),?20,"Error Retrieving file list at "_..#SyncDir_". Quitting."
+		Quit Status	
+	} Else {
+		Write !,$ZDT($Horolog,8,2),?20,"Retrieving file list at "_..#SyncDir
+	}
+	
+	#; Merge ^ZJA($ZN,"SyncLayout",$H,"FileList") = FileList
+		 
+	#; Build list of files to process
+	Set (Files, Index, SyncFileCount) = ""
+	For {
+		Set Index = $Order(FileList(Index)) 
+		Quit:Index=""
+		
+		Set SyncFileName = $ListGet(FileList(Index),1)
+		Set LastModifiedDTM = $ListGet(FileList(Index),8)
+		If LastModifiedDTM = "" Set LastModifiedDTM = $ListGet(FileList(Index),7)
+		If SyncFileName'="" {
+			Set SyncFileCount = $I(SyncFileCount)
+			Set Files(+LastModifiedDTM,SyncFileName) = ""
+		}
+	}
+	If 'SyncFileCount {
+		Write !!,$ZDT($Horolog,8,2),?20,"No Files To Process.  Quitting..."
+		Quit $$$OK
+	}
+	
+	#; Save Full Local layout before loading sync file so users can revert changes
+	Write !,$ZDT($Horolog,8,2),?20,"Backing up current layout..."
+	
+	Do ##Class(HS.Util.Installer.Trak).SaveLayout(LocalDir_"Trak_Full_Layout_"_$ZD($Horolog,8)_".xml")
+
+	If LocalDir = "" Set LocalDir = $SYSTEM.Util.InstallDirectory()
+	
+	Set (LastModifiedDTM, SyncFileName, RegenFlag) = ""
+	Set SyncCount = 0
+	
+	For {
+		Set LastModifiedDTM = $Order(Files(LastModifiedDTM))
+		Quit:LastModifiedDTM=""
+		
+		For {
+			Set SyncFileName = $Order(Files(LastModifiedDTM,SyncFileName))
+			Quit:SyncFileName=""
+			
+			Set Status = sftpObject.Get(..#SyncDir_SyncFileName,LocalDir_SyncFileName)
+			If $$$ISERR(Status) {
+				Write !,$ZDT($Horolog,8,2)," Error retrieving sync file: "_..#SyncDir_SyncFileName
+				Continue
+			}
+			Set Status = sftpObject.Delete(..#SyncDir_SyncFileName)
+			
+			Write !,$ZDT($Horolog,8,2),?20,"Sync file transfer successful: "_..#SyncDir_SyncFileName
+			Write !,$ZDT($Horolog,8,2),?20,"Sync file deleted from: "_..#SyncTarget
+			
+			If SyncCount = (SyncFileCount - 1) Set RegenFlag = 1
+			
+			#; Now Perform Local Sync
+			Write !,$ZDT($Horolog,8,2),?20,"Syncing Local Layout with file: "_LocalDir_SyncFileName
+		
+			Set Status = ..LoadLayoutPatch(LocalDir_SyncFileName,1,RegenFlag)
+		
+			Write !,$ZDT($Horolog,8,2),?20,"Sync Status: ",$Case(Status,1:1,:$$GetErrorText^%apiOBJ(Status)),!
+			
+			Set SyncCount = $I(SyncCount)
+
+		}
+	}
+	Write !,$ZDT($Horolog,8,2),?20,"Process Complete...",!!	
+	Set Status = sftpObject.CloseSFTP()
+
+	Quit Status
+]]></Implementation>
+</Method>
+
+<Method name="GetContextListByComp">
+<Description>
+Return a delimited string "|" of contexts for given ComponentID</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>ComponentID:%String="",SiteCode:%String=""</FormalSpec>
+<ReturnType>%List</ReturnType>
+<Implementation><![CDATA[
+	Quit:ComponentID="" ""
+
+	If SiteCode="" Set SiteCode = "CUSTOM"
+	Set ComponentName = ##Class(websys.Component).NameGetStored(ComponentID)
+	
+	Set (Context, ContextList, PreferenceID)=""
+	For {
+		Set Context = $Order(^websys.PreferencesI("AppKey",ComponentID,Context))
+		Quit:Context=""
+		
+		Set zContext = $Piece(Context,"LAYOUT",2,99)
+		Set Okay = 0
+		
+		#; Check if saved for the given SiteCode
+		For {
+			Set PreferenceID = $Order(^websys.PreferencesI("AppKey",ComponentID,Context,PreferenceID))
+			Quit:PreferenceID=""
+			
+			Set PrefObject = ##Class(websys.Preferences).%OpenId(PreferenceID)
+			If '$IsObject(PrefObject) Continue
+			
+			If (PrefObject.ObjectReference = SiteCode) {
+				If (PrefObject.ObjectType = "SITE") Set Okay = 1
+			}
+		}
+		If 'Okay Continue
+		
+		Set ContextList = ContextList_$ListBuild(zContext)
+	}
+	#; Add SINFOPANE data
+	If $Data(^websys.PreferencesI("Index","SITE",SiteCode,"COLUMNSSINFOPANE",ComponentName)) {
+		Set ContextList = ContextList_$ListBuild("SINFOPANE")
+	}
+	If ContextList="" Quit ""
+	Quit ContextList
+]]></Implementation>
+</Method>
+
+<Method name="GetComponentIdList">
+<Description>
+Get List Of Components - returns $List(ComponentID,...)</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>SiteCode:%String=""</FormalSpec>
+<ReturnType>%List</ReturnType>
+<Implementation><![CDATA[
+	Set ComponentIdList=""
+	Kill CompNameArray
+	Set ComponentID=""
+
+	For {
+		Set ComponentID = $Order(^websys.PreferencesI("AppKey",ComponentID))
+		Quit:ComponentID=""
+		
+		#; Make sure this is a valid component ID
+		If '##Class(websys.Component).%ExistsId(ComponentID) Continue
+		
+		#; Check if this component exists for the given site
+		#; If '$Data(^websys.PreferencesI("Index","SITE",SiteCode,"LAYOUT",ComponentID)) Continue
+		Set ComponentName = ##Class(websys.Component).NameGetStored(ComponentID)
+		
+		#; Put them in an array so they sort
+		If ComponentName'="" Set CompNameArray(ComponentName) = ComponentID
+	}
+	Set ComponentName=""
+	For {
+		Set ComponentName = $Order(CompNameArray(ComponentName))
+		Quit:ComponentName=""
+		
+		Set ComponentIdList = ComponentIdList_$ListBuild(CompNameArray(ComponentName))
+	}
+	Quit ComponentIdList
+]]></Implementation>
+</Method>
+
+<Method name="SaveAllLayoutPatch">
+<Description>
+Save the Trak layout changes to a file - Use classmethod LoadComponentLayoutPatch to apply</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[Index:%String="",VarList:%String="",ValueList:%String="",&tGlobals="",PatchFile:%String="C:\access01\PatchFile.xml",JiraTicket:%String="",Verbose:%Boolean=0]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set Status = $$$OK
+	Set PatchFileName =##Class(%File).GetFilename(PatchFile)
+	
+	Kill ^zTrakLayoutPatch(PatchFileName)
+	Set TypeList = $Get(^zTrakLayoutPatch(PatchFileName,"TYPELIST"))
+	If TypeList="" || ('$ListFind(TypeList,"All")) {
+		Set ^zTrakLayoutPatch(PatchFileName,"TYPELIST") = TypeList_$ListBuild("All")
+	}
+	Set ^zTrakLayoutPatch(PatchFileName,Index,"FILE") = PatchFile	
+	Set ^zTrakLayoutPatch(PatchFileName,Index) = $Horolog_"|"_JiraTicket_"|"_PatchFile
+	
+	#; Save the Trak layout to a file - Taken from HS.Util.Installer.Trak:SaveLayout
+	Do {
+			
+		If Verbose {
+			Write !!,?3,"Saving Layout",!,?3,"Collecting globals, please be patient ...",!
+		}
+		
+		// Now, build a list of globals to export
+		Do findGlobals("^epr*",				.tGlobals)
+		Do findGlobals("^oo*",				.tGlobals)
+		Do findGlobals("^websys.Dict*",		.tGlobals)
+		Do findGlobals("^websys.Pref*",		.tGlobals) 
+		Do findGlobals("^websys.Stan*",		.tGlobals)
+		Do findGlobals("^websys.Trans*",	.tGlobals)
+		Do findGlobals("^websys.Work*",		.tGlobals)
+		
+		// Remove exceptions
+		Kill tGlobals("epr.CTChartItemTypeD.gbl")
+		Kill tGlobals("epr.CTChartItemTypeI.gbl")
+
+		 #; Include Layout Verison
+		 Set tGlobals("HS.Layout.gbl")=""		
+	} While (0)
+
+	//Set Status = ..ExportTrakLayoutToXmlFile(.tGlobals,PatchFile,Verbose)
+	Quit Status
+	
+findGlobals(spec,list)
+	If $E(spec,$L(spec))="*" {
+		// Wildcards
+		Set (spec,glo) = $E(spec,1,$L(spec)-1)
+		For {
+			If $D(@spec) {
+				Set list($E(spec,2,$L(spec))_".gbl")=""
+			}
+			Set spec = $O(^$global(spec))
+			Quit:spec=""
+			Quit:$E(spec,1,$L(glo))'=glo
+		}
+	} Else {
+		// Specific global
+		Set:$D(@spec) list($E(spec,2,$L(spec))_".gbl")=""
+	}
+	Quit
+]]></Implementation>
+</Method>
+
+<Method name="SaveTransformLayoutPatch">
+<Description>
+Save the Trak layout changes to a file - Use classmethod LoadComponentLayoutPatch to apply</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[Index:%String="",VarList:%String="",ValueList:%String="",&tGlobals="",PatchFile:%String="C:\access01\PatchFile.xml",JiraTicket:%String="",Verbose:%Boolean=0]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set Status = $$$OK
+	Set PatchFileName =##Class(%File).GetFilename(PatchFile)
+	
+	Set TypeList = $Get(^zTrakLayoutPatch(PatchFileName,"TYPELIST"))
+	If TypeList="" || ('$ListFind(TypeList,"Transform")) {
+		Set ^zTrakLayoutPatch(PatchFileName,"TYPELIST") = TypeList_$ListBuild("Transform")
+	}
+	Set ^zTrakLayoutPatch(PatchFileName,Index,"VARS") = ""
+		
+	Set ^zTrakLayoutPatch(PatchFileName,Index) = $Horolog_"|"_JiraTicket_"|"_PatchFile
+	
+	Merge ^zTrakLayoutPatch(PatchFileName,"GLOBAL","^websys.TransformD") = ^websys.TransformD
+	Merge ^zTrakLayoutPatch(PatchFileName,"GLOBAL","^websys.TransformI") = ^websys.TransformI
+	
+	Quit Status
+]]></Implementation>
+</Method>
+
+<Method name="SaveIconLayoutPatch">
+<Description>
+Save the Trak layout changes to a file - Use classmethod LoadLayoutPatch to apply</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[Index:%String="",VarList:%String="",ValueList:%String="",&tGlobals="",PatchFile:%String="C:\access01\PatchFile.xml",JiraTicket:%String="",Verbose:%Boolean=0]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set Status = $$$OK
+	Set PatchFileName =##Class(%File).GetFilename(PatchFile)
+	
+	Set TypeList = $Get(^zTrakLayoutPatch(PatchFileName,"TYPELIST"))
+	If TypeList="" || ('$ListFind(TypeList,"Icon")) {
+		Set ^zTrakLayoutPatch(PatchFileName,"TYPELIST") = TypeList_$ListBuild("Icon")
+	}
+	Set ^zTrakLayoutPatch(PatchFileName,Index,"VARS") = ""
+		
+	Set ^zTrakLayoutPatch(PatchFileName,Index) = $Horolog_"|"_JiraTicket_"|"_PatchFile
+	
+	Merge ^zTrakLayoutPatch(PatchFileName,"GLOBAL","^epr.CTIconProfileD") = ^epr.CTIconProfileD
+	Merge ^zTrakLayoutPatch(PatchFileName,"GLOBAL","^epr.CTIconProfileI") = ^epr.CTIconProfileI
+	Merge ^zTrakLayoutPatch(PatchFileName,"GLOBAL","^epr.CTIconAssociationD") = ^epr.CTIconAssociationD
+	Merge ^zTrakLayoutPatch(PatchFileName,"GLOBAL","^epr.CTIconAssociationI") = ^epr.CTIconAssociationI
+	
+	Quit Status
+]]></Implementation>
+</Method>
+
+<Method name="SaveStandardTypeLayoutPatch">
+<Description>
+Save the Trak layout changes to a file - Use classmethod LoadComponentLayoutPatch to apply</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[Index:%String="",VarList:%String="",ValueList:%String="",&tGlobals="",PatchFile:%String="C:\access01\PatchFile.xml",JiraTicket:%String="",Verbose:%Boolean=0]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set Status = $$$OK
+	Set PatchFileName =##Class(%File).GetFilename(PatchFile)
+	
+	Set TypeList = $Get(^zTrakLayoutPatch(PatchFileName,"TYPELIST"))
+	If TypeList="" || ('$ListFind(TypeList,"StandardType")) {
+		Set ^zTrakLayoutPatch(PatchFileName,"TYPELIST") = TypeList_$ListBuild("StandardType")
+	}
+	Set ^zTrakLayoutPatch(PatchFileName,Index,"VARS") = ""
+		
+	Set ^zTrakLayoutPatch(PatchFileName,Index) = $Horolog_"|"_JiraTicket_"|"_PatchFile
+	
+	Merge ^zTrakLayoutPatch(PatchFileName,"GLOBAL","^websys.StandardTypeD") = ^websys.StandardTypeD
+	
+	Quit Status
+]]></Implementation>
+</Method>
+
+<Method name="SaveChartLayoutPatch">
+<Description>
+Save the Trak layout changes to a file - Use classmethod LoadComponentLayoutPatch to apply</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[Index:%String="",VarList:%String="",ValueList:%String="",&tGlobals="",PatchFile:%String="C:\access01\PatchFile.xml",JiraTicket:%String="",Verbose:%Boolean=0]]></FormalSpec>
+<ProcedureBlock>0</ProcedureBlock>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set Status = $$$OK
+	Set PatchFileName =##Class(%File).GetFilename(PatchFile)
+	
+	If VarList="" {
+		Set Error = "0 Null Var List"
+		If Verbose Write !!?5,"Error: "_Error
+		Quit Error
+	}
+	Set VarList = $ListFromString(VarList,"|")
+	Set ValueList = $ListFromString(ValueList,"|")
+	
+	For pIndex = 1:1:$ListLength(VarList) {
+		Set Var = $ListGet(VarList,pIndex)
+		If Var="" Continue
+		
+		Set ExecString = "Set ("_Var_",^zTrakLayoutPatch("""_PatchFileName_""","_Index_",""VARS"","""_Var_""")) = """_$ListGet(ValueList,pIndex)_""""		
+		Xecute ExecString
+	}
+	If $Get(ChartBookID)="" {
+		Set Error = "0 No ChartBookID"
+		Quit Error
+	}
+	Set ^zTrakLayoutPatch(PatchFileName,Index,"TYPE") = "Chart"
+	Set TypeList = $Get(^zTrakLayoutPatch(PatchFileName,"TYPELIST"))
+	If TypeList="" || ('$ListFind(TypeList,"Chart")) {
+		Set ^zTrakLayoutPatch(PatchFileName,"TYPELIST") = TypeList_$ListBuild("Chart")
+	}
+	Set ^zTrakLayoutPatch(PatchFileName,Index,"VARS") = $ListBuild(ChartBookID,ChartID)
+		
+	Set ^zTrakLayoutPatch(PatchFileName,Index) = $Horolog_"|"_JiraTicket_"|"_PatchFile
+	
+	Set ChartBookGlobalD = "^epr.ChartBookD"
+	Set ChartBookGlobalI = "^epr.ChartBookI"
+	Set ChartBookDesc = ##Class(epr.ChartBook).DescriptionGetStored(ChartBookID)
+	Set iChartBookDesc = $ZStrip(ChartBookDesc,"*PW")
+	Set iChartBookDesc = $Zcvt(iChartBookDesc,"U")
+	
+	If ChartID'="" {
+		Set ChartGlobalD = "^ooChartD"
+		Set ChartGlobalI = "^ooChartI"
+		Set ChartName = ##Class(epr.Chart).NameGetStored(ChartID)
+		Set iChartName = $ZStrip(ChartName,"*PW")
+		Set iChartName = $Zcvt(iChartName,"U")	
+	}
+	Merge ^zTrakLayoutPatch(PatchFileName,"GLOBAL",ChartBookGlobalI,"UniqueDescriptionIndex",iChartBookDesc,ChartBookID) = ^epr.ChartBookI("UniqueDescriptionIndex",iChartBookDesc,ChartBookID)
+	Merge ^zTrakLayoutPatch(PatchFileName,"GLOBAL",ChartBookGlobalD,ChartBookID) = ^epr.ChartBookD(ChartBookID)
+
+	If ChartID'="" {
+		Merge ^zTrakLayoutPatch(PatchFileName,"GLOBAL",ChartGlobalD,ChartID) = ^ooChartD(ChartID)		
+		Merge ^zTrakLayoutPatch(PatchFileName,"GLOBAL",ChartGlobalI,"NameIndex",iChartName,ChartID) = ^ooChartI("NameIndex",iChartName,ChartID)		
+	}
+	Quit Status
+]]></Implementation>
+</Method>
+
+<Method name="SaveLayoutPatchFile">
+<Description>
+Handle JSON post from rest service</Description>
+<ClassMethod>1</ClassMethod>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	#; Structure of legacy PatchDataList argument passed to SaveLayoutPatch:
+	#; value += patchType + ';' + varList + ';' + valueList + '^';
+	Set tSC = ##class(%ZEN.Auxiliary.jsonProvider).%ParseJSON(%request.Content,"",.tObject)
+	
+	For Index = 1:1:tObject.%data("LayoutItemList").Count() {
+		Set LayoutItem = tObject.%data("LayoutItemList").GetAt(Index).%data("LayoutItem")
+	}
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="SaveLayoutPatch">
+<Description>
+Takes "^" delimited list of patch data records
+patch data delimited by ";"
+VarList position corresponds to ValueList position ('|' delimited)</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>PatchDataList:%String="",PatchFile:%String="",JiraTicket:%String="",Verbose:%Boolean=0</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	If PatchDataList="" Quit "0 no Patch List entered"
+	Set Status = $$$OK
+	
+	Set PatchFileName = ##Class(%File).GetFilename(PatchFile)
+	Kill ^zTrakLayoutPatch
+	
+	Set PatchDataList = $ListFromString(PatchDataList,"^")
+
+	For Index = 1:1:$ListLength(PatchDataList) {
+		Set PatchData = $ListGet(PatchDataList,Index)
+		If PatchData="" Continue
+		
+		Set PatchType = $Piece(PatchData,";",1)
+		Set VarList = $Piece(PatchData,";",2)
+		Set ValueList = $Piece(PatchData,";",3)
+		Set Status = $ClassMethod($ClassName(),"Save"_PatchType_"LayoutPatch",Index,VarList,ValueList,.tGlobals,PatchFile,JiraTicket,Verbose)
+		
+		If $$$ISERR(Status) Quit	
+	}
+	If $$$ISERR(Status) Quit Status
+
+	Set tGlobals("zTrakLayoutPatch.gbl")=""
+	Set Status = ..ExportTrakLayoutToXmlFile(.tGlobals,PatchFile,Verbose)
+	Quit Status
+]]></Implementation>
+</Method>
+
+<Method name="ExportTrakLayoutToXmlFile">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&tGlobals,PatchFile:%String="",Verbose:%Boolean=0]]></FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	Set Status = $$$OK
+	Set PatchFileName = ##Class(%File).GetFilename(PatchFile)
+	
+	Set Status = $system.OBJ.Export(.tGlobals, PatchFile, "-d /diffexport")
+	
+	If '$$$ISERR(Status) {
+		If Verbose Write !!?5,"Layout Patch saved to file: "_PatchFile
+		Kill ^zTrakLayoutPatch(PatchFileName)
+	} Else {
+		Set Status = $$GetErrorText^%apiOBJ(Status)	
+	}
+	Quit Status
+]]></Implementation>
+</Method>
+
+<Method name="SaveComponentLayoutPatch">
+<Description>
+Save the Trak layout changes to a file - Use classmethod LoadComponentLayoutPatch to apply</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[Index:%String="",VarList:%String="",ValueList:%String="",&tGlobals="",PatchFile:%String="C:\access01\PatchFile.xml",JiraTicket:%String="",Verbose:%Boolean=0]]></FormalSpec>
+<ProcedureBlock>0</ProcedureBlock>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set Status = $$$OK
+	Set PatchFileName = ##Class(%File).GetFilename(PatchFile)
+	#; 1.) Set vars to ^zTrakLayoutPatch(PatchFile,"VARS") = $ListBuild(ComponentID, ComponentName, ColumnsPrefID, RowsPrefID, LayoutPrefID, Context, SiteCode)
+	        
+	#; 2.) Merge data for all layout changes to a global ^zTrakLayoutPatch(PatchFile,"GLOBAL",GlobalName
+	#; 3.) Export global to given PatchFile
+
+	#; Get Component ID (^websys.ComponentD())
+	#; Get Layout Preference ID (^websys.PreferenceD())
+	#; Get Columns/Rows Preference ID (^websys.PreferenceD())
+	
+	#; GLOBALS NECESSARY TO MERGE to ^zTrakLayoutPatch:
+		#; COLUMNS/ROWS:
+		#; ^websys.PreferencesI("Index","SITE",SiteCode,"COLUMNS[ROWS]"_Context,ComponentName,Columns[Rows] PreferenceID)
+		#; Example: ^websys.PreferencesI("Index","SITE","CUSTOM","COLUMNSC201EP83","RBAppointment.List",4927)
+		#;          ^websys.PreferencesI("AppKey","RBAppointment.List","COLUMNSC201EP83",4927)
+
+		 
+		#; LAYOUT:
+		#; ^websys.PreferencesI("Index","SITE",SiteCode,"LAYOUT"_Context,ComponentID,PreferenceID)
+		#; example: ^websys.PreferencesI("Index","SITE","CUSTOM","LAYOUTC201EP83",596,4917)
+		#;          ^websys.PreferencesI("AppKey",596,"LAYOUTC201EP83",4917)
+		#; ^websys.PreferencesD(PreferenceID)
+		
+		#; TRANSLATION:
+		#; merge ^websys.TranslationD("CONTEXT",ComponentID_Context)
+		#; example: ^websys.TranslationD("CONTEXT","596C201EP83") 
+		
+	If VarList="" {
+		Set Error = "0 Null VarList"
+		If Verbose Write !!?5,"Error: "_Error
+		Quit Error
+	}
+	Set VarList = $ListFromString(VarList,"|")
+	Set ValueList = $ListFromString(ValueList,"|")	
+	
+	For pIndex = 1:1:$ListLength(VarList) {
+		Set Var = $ListGet(VarList,pIndex)
+		If Var="" Continue
+		
+		Set ExecString = "Set ("_Var_",^zTrakLayoutPatch("""_PatchFileName_""","_Index_",""VARS"","""_Var_""")) = """_$ListGet(ValueList,pIndex)_""""
+		Xecute ExecString		
+	}
+	
+	Set ComponentName = $Get(^zTrakLayoutPatch(PatchFileName,Index,"VARS","ComponentName"))
+	Set SiteCode = $Get(^zTrakLayoutPatch(PatchFileName,Index,"VARS","SiteCode"))
+	Set Context = $Get(^zTrakLayoutPatch(PatchFileName,Index,"VARS","Context"))
+	
+	If ComponentName="" || (SiteCode="") {
+		Set Error = "Missing required vars"
+		If Verbose Write !!?5,Error 
+		Quit "0 "_Error
+	} 
+	
+	Set ComponentID = ##Class(websys.Component).GetIdFromCodeOrDescription(ComponentName)
+	If ComponentID="" {
+		Set Error = "Could not find ID for Component: "_ComponentName
+		If Verbose Write !!?5,Error 
+		Quit "0 "_Error
+	}
+	Set ColumnsPrefID = $Order(^websys.PreferencesI("Index","SITE",SiteCode,"COLUMNS"_Context,ComponentName,""))
+	Set RowsPrefID = $Order(^websys.PreferencesI("Index","SITE",SiteCode,"ROWS"_Context,ComponentName,""))
+	Set LayoutPrefID = $Order(^websys.PreferencesI("Index","SITE",SiteCode,"LAYOUT"_Context,ComponentID,""))
+	
+	Set ^zTrakLayoutPatch(PatchFileName,Index,"VARS","ComponentID") = ComponentID
+	Set ^zTrakLayoutPatch(PatchFileName,Index,"VARS","ColumnsPrefID") = ColumnsPrefID
+	Set ^zTrakLayoutPatch(PatchFileName,Index,"VARS","RowsPrefID") = RowsPrefID
+	Set ^zTrakLayoutPatch(PatchFileName,Index,"VARS","LayoutPrefID") = LayoutPrefID
+	
+	Set PrefGlobalI = "^websys.PreferencesI"
+	Set GlobalSub = "GLOBAL"
+	
+	Set ^zTrakLayoutPatch(PatchFileName,Index) = $Horolog_"|"_JiraTicket_"|"_PatchFile
+	Set ^zTrakLayoutPatch(PatchFileName,Index,"TYPE") = "Component"
+	
+	Set TypeList = $Get(^zTrakLayoutPatch(PatchFileName,"TYPELIST"))
+	If TypeList="" || ('$ListFind(TypeList,"Component")) {
+		Set ^zTrakLayoutPatch(PatchFileName,"TYPELIST") = TypeList_$ListBuild("Component")
+	}
+	Merge ^zTrakLayoutPatch(PatchFileName,GlobalSub,PrefGlobalI,"Index","SITE",SiteCode,"COLUMNS"_Context,ComponentName) = ^websys.PreferencesI("Index","SITE",SiteCode,"COLUMNS"_Context,ComponentName)
+	Merge ^zTrakLayoutPatch(PatchFileName,GlobalSub,PrefGlobalI,"Index","SITE",SiteCode,"ROWS"_Context,ComponentName) = ^websys.PreferencesI("Index","SITE",SiteCode,"ROWS"_Context,ComponentName)
+	Merge ^zTrakLayoutPatch(PatchFileName,GlobalSub,PrefGlobalI,"Index","SITE",SiteCode,"LAYOUT"_Context,ComponentID) = ^websys.PreferencesI("Index","SITE",SiteCode,"LAYOUT"_Context,ComponentID)
+	
+	#; Merge AppKey / Index
+	If LayoutPrefID {
+		Set ^zTrakLayoutPatch(PatchFileName,GlobalSub,PrefGlobalI,"Index","SITE",SiteCode,"LAYOUT"_Context,ComponentID,LayoutPrefID) = ""
+		Set ^zTrakLayoutPatch(PatchFileName,GlobalSub,PrefGlobalI,"AppKey",ComponentID,"LAYOUT"_Context,LayoutPrefID) = ""
+	}
+	If ColumnsPrefID {
+		Set ^zTrakLayoutPatch(PatchFileName,GlobalSub,PrefGlobalI,"Index","SITE",SiteCode,"COLUMNS"_Context,ComponentName,ColumnsPrefID) = ""
+		Set ^zTrakLayoutPatch(PatchFileName,GlobalSub,PrefGlobalI,"AppKey",ComponentName,"COLUMNS"_Context,ColumnsPrefID) = ""
+	}
+	If RowsPrefID {
+		Set ^zTrakLayoutPatch(PatchFileName,GlobalSub,PrefGlobalI,"Index","SITE",SiteCode,"ROWS"_Context,ComponentName,RowsPrefID) = ""
+		Set ^zTrakLayoutPatch(PatchFileName,GlobalSub,PrefGlobalI,"AppKey",ComponentName,"ROWS"_Context,RowsPrefID) = ""
+	}
+	
+	#; Merge Translation Global
+	Set Subscript=""
+	#; Set Language to English
+	Set LanguageID = 2
+	For {
+		Set Subscript = $Order(^websys.TranslationD(Subscript))
+		Quit:Subscript=""
+		If Subscript = "COMP" {
+			If $Data(^websys.TranslationD(Subscript,LanguageID,ComponentID_Context)) {
+				Merge ^zTrakLayoutPatch(PatchFileName,GlobalSub,"^websys.TranslationD",Subscript,LanguageID,ComponentID_Context) = ^websys.TranslationD(Subscript,LanguageID,ComponentID_Context)
+			}
+			Continue
+		}
+		If $Data(^websys.TranslationD(Subscript,ComponentID_Context)) {
+			Merge ^zTrakLayoutPatch(PatchFileName,GlobalSub,"^websys.TranslationD",Subscript,ComponentID_Context) = ^websys.TranslationD(Subscript,ComponentID_Context)
+		}
+	}
+	
+	#; Merge data node of Preferences global
+	For PrefID = ColumnsPrefID, RowsPrefID, LayoutPrefID {
+		If PrefID && ($Data(^websys.PreferencesD(PrefID))) {
+			Merge ^zTrakLayoutPatch(PatchFileName,GlobalSub,"^websys.PreferencesD",PrefID) = ^websys.PreferencesD(PrefID)
+		}
+	}
+	
+	#; Capture any manual changes made to the ComponentItems or ComponentTableItems
+	Merge ^zTrakLayoutPatch(PatchFileName,GlobalSub,"^websys.ComponentItemsD",ComponentID) = ^websys.ComponentItemsD(ComponentID)
+	Merge ^zTrakLayoutPatch(PatchFileName,GlobalSub,"^websys.ComponentTableItemsD",ComponentID) = ^websys.ComponentTableItemsD(ComponentID)
+	Quit Status
+]]></Implementation>
+</Method>
+
+<Method name="LoadLayoutPatch">
+<Description>
+Load the Trak layout changes from file and merge</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>PatchFile:%String="",Verbose:%String=0,RegenFlag:%Boolean=1</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set Status = $$$OK
+	If ..#AGNamespace '[ $ZCVT($Namespace,"L") {
+		Write !,$ZDT($Horolog,8,2),?20," *** Must run from Access Gateway namespace: "
+		Write ..#AGNamespace_". Quitting ***"
+		Quit Status
+	}
+	Set PatchFileName =##Class(%File).GetFilename(PatchFile)
+	
+	Kill ^zTrakLayoutPatch(PatchFileName)
+	
+	#; Load File
+	Set Status = $System.OBJ.Load(PatchFile)
+	If $$$ISERR(Status) Quit Status
+
+	If PatchFile="" {
+		If Verbose Write !,$ZDT($Horolog,8,2),?20,"Patch File required. Quitting."
+		Quit 0
+	}
+	Set PatchTypeList = $Get(^zTrakLayoutPatch(PatchFileName,"TYPELIST"))
+	If PatchTypeList="" {
+		If Verbose Write !,$ZDT($Horolog,8,2),?20,"Patch Type not found. Quitting.",!,"Patch File: ",PatchFile
+		Quit 0
+	}
+	For Index = 1:1:$ListLength(PatchTypeList) {
+		Set PatchType = $ListGet(PatchTypeList,Index)
+		If PatchType="" Continue
+		
+		If Verbose Write !,$ZDT($Horolog,8,2),?20,"Preparing Patch Type: "_PatchType
+		Set Status = $ClassMethod($ClassName(),"Prepare"_PatchType_"LayoutPatch",PatchFile,Verbose)
+		If $$$ISERR(Status) Quit	
+	}
+	If $$$ISERR(Status) Quit Status
+	
+	Set Status = ..MergePatchGlobalAndRegenerate(PatchFileName, Verbose, RegenFlag)
+	
+	Quit Status
+]]></Implementation>
+</Method>
+
+<Method name="PrepareTransformLayoutPatch">
+<Description>
+backup and kill pre-existing Trak Transform table prior to merge</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>PatchFile:%String="",Verbose:%String=0</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set Status = $$$OK
+	
+	Set PatchFileName =##Class(%File).GetFilename(PatchFile)
+	If PatchFileName="" Quit "0 No Patch File"
+	
+	Set PatchTypeList = $Get(^zTrakLayoutPatch(PatchFileName,"TYPELIST"))
+	If PatchTypeList="" Quit "0 No Patch Type List Found"
+	
+	If '$ListFind(PatchTypeList,"Transform") {
+		If Verbose Write !,$ZDT($Horolog,8,2),?20,"Incorrect Patch Type. Type List: "_$ListToString(PatchTypeList,"|")
+		Quit 0
+	}	
+	#; Backup and Kill
+	Merge ^zTrakLayoutPatch(PatchFileName,"BACKUP","^websys.TransformD") = ^websys.TransformD
+	Merge ^zTrakLayoutPatch(PatchFileName,"BACKUP","^websys.TransformI") = ^websys.TransformI
+	//Kill ^websys.TransformD
+	//Kill ^websys.TransformI
+	Quit Status
+]]></Implementation>
+</Method>
+
+<Method name="PrepareStandardTypeLayoutPatch">
+<Description>
+backup and kill pre-existing Trak Standard Type table prior to merge</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>PatchFile:%String="",Verbose:%String=0</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set Status = $$$OK
+	
+	Set PatchFileName =##Class(%File).GetFilename(PatchFile)
+	If PatchFileName="" Quit "0 No Patch File"
+	
+	Set PatchTypeList = $Get(^zTrakLayoutPatch(PatchFileName,"TYPELIST"))
+	If PatchTypeList="" Quit "0 No Patch Type List Found"
+	
+	If '$ListFind(PatchTypeList,"StandardType") {
+		If Verbose Write !,$ZDT($Horolog,8,2),?20,"Incorrect Patch Type. Type List: "_$ListToString(PatchTypeList,"|")
+		Quit 0
+	}
+	If Verbose Write !,$ZDT($Horolog,8,2),?20,"Removing previous StandardType items..."
+	
+	#; Backup and Kill
+	Merge ^zTrakLayoutPatch(PatchFileName,"BACKUP","^websys.StandardTypeD") = ^websys.StandardTypeD
+	Kill ^websys.StandardTypeD
+	Quit Status
+]]></Implementation>
+</Method>
+
+<Method name="PrepareIconLayoutPatch">
+<Description>
+backup pre-existing Trak Icon Definition table prior to merge</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>PatchFile:%String="",Verbose:%String=0</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set Status = $$$OK
+	
+	Set PatchFileName =##Class(%File).GetFilename(PatchFile)
+	If PatchFileName="" Quit "0 No Patch File"
+	
+	Set PatchTypeList = $Get(^zTrakLayoutPatch(PatchFileName,"TYPELIST"))
+	If PatchTypeList="" Quit "0 No Patch Type List Found"
+	
+	If '$ListFind(PatchTypeList,"Icon") {
+		If Verbose Write !!?5,"Incorrect Patch Type. Type List: "_$ListToString(PatchTypeList,"|")
+		Quit 0
+	}
+	// If Verbose Write !!?5,"Removing previous Icon items..."
+	
+	#; Backup and Kill
+	Merge ^zTrakLayoutPatch(PatchFileName,"BACKUP","^epr.CTIconProfileD") = ^epr.CTIconProfileD
+	Merge ^zTrakLayoutPatch(PatchFileName,"BACKUP","^epr.CTIconProfileI") = ^epr.CTIconProfileI
+	Merge ^zTrakLayoutPatch(PatchFileName,"BACKUP","^epr.CTIconAssociationD") = ^epr.CTIconAssociationD
+	Merge ^zTrakLayoutPatch(PatchFileName,"BACKUP","^epr.CTIconAssociationI") = ^epr.CTIconAssociationI
+	Kill ^epr.CTIconProfileD
+	Kill ^epr.CTIconProfileI
+	Quit Status
+]]></Implementation>
+</Method>
+
+<Method name="PrepareAllLayoutPatch">
+<Description>
+Prepare all Trak layout changes</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>PatchFile:%String="",Verbose:%String=0</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[	Quit Status
+]]></Implementation>
+</Method>
+
+<Method name="PrepareChartLayoutPatch">
+<Description>
+Prepare the Trak Chart layout changes</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>PatchFile:%String="",Verbose:%String=0</FormalSpec>
+<ProcedureBlock>0</ProcedureBlock>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set Status = $$$OK
+	
+	Set PatchFileName =##Class(%File).GetFilename(PatchFile)
+	If PatchFileName="" Quit "0 No Patch File"
+			
+	#; Get Vars from temp global	
+	Set (Var)=""
+	For Index = 1:1 {
+		Quit:'$Data(^zTrakLayoutPatch(PatchFileName,Index))
+		
+		If $Get(^zTrakLayoutPatch(PatchFileName,Index,"TYPE")) '= "Chart" Continue
+		
+		For {
+			Set Var = $Order(^zTrakLayoutPatch(PatchFileName,Index,"VARS",Var))
+			Quit:Var=""
+			
+			Set ExecString = "Set "_Var_" = $Get(^zTrakLayoutPatch("""_PatchFileName_""","_Index_",""VARS"","""_Var_"""))"
+			Xecute ExecString
+		}
+		#; Check required vars
+	 	If $Get(ChartBookID)="" {
+		 	If Verbose Write !!?5,Index,".) Error: Missing required ChartBookID."
+		 	Continue
+	 	}
+		Set ChartBookGlobalD = "^epr.ChartBookD"
+		Set ChartBookGlobalI = "^epr.ChartBookI"
+		Set ChartBookDesc = ##Class(epr.ChartBook).DescriptionGetStored(ChartBookID)
+		Set iChartBookDesc = $ZStrip(ChartBookDesc,"*PW")
+		Set iChartBookDesc = $Zcvt(iChartBookDesc,"U")
+		
+		If Verbose {
+			Write !,$ZDT($Horolog,8,2),?20,Index,".) Removing previous Chart items..."
+			Write !,$ZDT($Horolog,8,2),?20,"ChartBook: "_ChartBookDesc_" (ID: "_ChartBookID_")"
+		}
+
+		If ChartID'="" {
+			Set ChartGlobalD = "^ooChartD"
+			Set ChartGlobalI = "^ooChartI"
+			Set ChartName = ##Class(epr.Chart).NameGetStored(ChartID)
+			Set iChartName = $ZStrip(ChartName,"*PW")
+			Set iChartName = $Zcvt(iChartName,"U")	
+			
+			If Verbose {
+				Write !,$ZDT($Horolog,8,2),?20,Index,".) Removing previous Chart items..."
+				Write !,$ZDT($Horolog,8,2),?20,"Chart: "_ChartName_" (ID: "_ChartID_")"
+			}
+		}
+		
+		#; Backup and Kill
+		If ChartBookID && (iChartBookDesc '= "") {
+			Merge ^zTrakLayoutPatch(PatchFileName,"BACKUP",ChartBookGlobalI,"UniqueDescriptionIndex",iChartBookDesc,ChartBookID) = ^epr.ChartBookI("UniqueDescriptionIndex",iChartBookDesc,ChartBookID)
+			Kill ^epr.ChartBookI("UniqueDescriptionIndex",iChartBookDesc,ChartBookID)
+		}
+		If ChartID'="" && (iChartName'="") {
+			Merge ^zTrakLayoutPatch(PatchFileName,"BACKUP",ChartGlobalI,"NameIndex",iChartName,ChartID) = ^ooChartI("NameIndex",iChartName,ChartID)		
+			Kill ^ooChartI("NameIndex",iChartName,ChartID)
+		}
+	}
+	Quit Status
+]]></Implementation>
+</Method>
+
+<Method name="MergePatchGlobalAndRegenerate">
+<Description>
+Merge Patch Global and Regenerate Scripts</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>PatchFileName:%String="",Verbose:%String="",RegenFlag:%Boolean=1</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set Status = $$$OK
+	#; Iterate through ^zTrakLayoutPatch to merge entries
+	Set GlobalRef = ""
+	For {
+		Set GlobalRef = $Order(^zTrakLayoutPatch(PatchFileName,"GLOBAL",GlobalRef))
+		Quit:GlobalRef=""
+		
+		Set ExecString = "Merge "_GlobalRef_" = ^zTrakLayoutPatch("""_PatchFileName_""",""GLOBAL"","""_GlobalRef_""") "
+		Xecute ExecString
+		If Verbose Write !,$ZDT($Horolog,8,2),?20,"Merged Global: ",GlobalRef
+	}
+	#; Make sure that the websys.PreferencesD counter is up-to-date
+	Set ^websys.PreferencesD = $Order(^websys.PreferencesD(""),-1)
+	
+	#; Make sure that the ^ooChartD counter is up-to-date
+	Set ^ooChartD = $Order(^ooChartD(""),-1)
+	
+	#; Make sure that the ^epr.ChartBookD counter is up-to-date
+	Set ^epr.ChartBookD = $Order(^epr.ChartBookD(""),-1)
+
+	#; Scripts must be regenerated for all layout changes to apply
+	If RegenFlag {
+		Set Status = ##Class(HS.Util.Installer.Trak).Regenerate($Namespace)
+		If $$$ISERR(Status) {
+			If Verbose Write !,$ZDT($Horolog,8,2),?20,"Error: "_$$GetErrorText^%apiOBJ(Status)
+		} Else {
+			If Verbose Write !,$ZDT($Horolog,8,2),?20,"Layout Patch Load complete. File: "_PatchFileName
+		}
+	}
+	
+	#; CREATE SYNC FILE If in ..#SyncTarget system (Currently HSHIEIDEV01)
+	If $ZCVT($Piece($System,":",2),"L") = $ZCVT(..#SyncTarget,"L") {
+		Set UserList = $ListFromString(..#UserList)
+		
+		For Index = 1:1:$ListLength(UserList) {
+			Set User = $ListGet(UserList,Index)
+			If User="" Continue
+			If $ZCVT(User,"L") = $ZCVT($Username,"L") Continue
+			 
+			Set SyncFileName = $ZCVT($Username,"L")_"_"_$ZCVT(User,"L")_"_SyncFile.xml"
+			If Verbose {
+				Write !,$ZDT($Horolog,8,2),?20,"Creating Sync File: "_..#SyncDir_SyncFileName
+			}
+			Kill ^zTrakLayoutPatch(SyncFileName)
+			
+			#; create sync file
+			If ##Class(%File).Exists(..#SyncDir_SyncFileName) {
+				#; Load existing Sync Data
+				Set Status = $System.OBJ.Load(..#SyncDir_SyncFileName)
+			}
+			#; Merge current layout file
+			Merge ^zTrakLayoutPatch(SyncFileName) = ^zTrakLayoutPatch(PatchFileName)
+			
+			Set tGlobals("zTrakLayoutPatch.gbl")=""
+
+			Set Status = ..ExportTrakLayoutToXmlFile(.tGlobals,..#SyncDir_SyncFileName)
+			If Verbose Write !,$ZDT($Horolog,8,2),?20,"Export Status: "_$$GetErrorText^%apiOBJ(Status)
+		}
+	}
+	Kill ^zTrakLayoutPatch(PatchFileName)
+	Quit Status
+]]></Implementation>
+</Method>
+
+<Method name="PrepareComponentLayoutPatch">
+<Description>
+Prepare the Trak Component layout changes from file and merge</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>PatchFile:%String="",Verbose:%String=0</FormalSpec>
+<ProcedureBlock>0</ProcedureBlock>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set Status = $$$OK
+	
+	Set PatchFileName =##Class(%File).GetFilename(PatchFile)
+	If PatchFileName="" Quit "0 No Patch File"
+					
+	#; Get Vars from temp global
+	Set Var=""
+	For Index = 1:1 {
+		Quit:'$Data(^zTrakLayoutPatch(PatchFileName,Index))
+		
+		If $Get(^zTrakLayoutPatch(PatchFileName,Index,"TYPE")) '= "Component" Continue
+		
+		For {
+			Set Var = $Order(^zTrakLayoutPatch(PatchFileName,Index,"VARS",Var))
+			Quit:Var=""
+			
+			Set ExecString = "Set "_Var_" = $Get(^zTrakLayoutPatch("""_PatchFileName_""","_Index_",""VARS"","""_Var_"""))"
+			Xecute ExecString
+		}
+
+		#; Check required vars
+	 	If $Get(ComponentID)="" || ($Get(ComponentName)="") || ($Get(SiteCode)="") {
+		 	If Verbose Write !,$ZDT($Horolog,8,2),?20,Index,".) Error: Missing required variable."
+		 	Continue
+	 	}
+		
+		If Verbose {
+			Write !,$ZDT($Horolog,8,2),?20,Index,"Component: "_ComponentName_" Context: "_Context_". Removing previous Component items..."
+		}
+		
+		Set PrefGlobalI = "^websys.PreferencesI"
+		Set PrefGlobalD = "^websys.PreferencesD"
+		
+		If LayoutPrefID {
+			Merge ^zTrakLayoutPatch(PatchFileName,"BACKUP",PrefGlobalI,"Index","SITE",SiteCode,"LAYOUT"_Context,ComponentID) = ^websys.PreferencesI("Index","SITE",SiteCode,"LAYOUT"_Context,ComponentID)
+			Merge ^zTrakLayoutPatch(PatchFileName,"BACKUP",PrefGlobalI,"AppKey",ComponentID,"LAYOUT"_Context) = ^websys.PreferencesI("AppKey",ComponentID,"LAYOUT"_Context)
+			
+			Kill ^websys.PreferencesI("Index","SITE",SiteCode,"LAYOUT"_Context,ComponentID)
+			Kill ^websys.PreferencesI("AppKey",ComponentID,"LAYOUT"_Context)
+		}
+		If ColumnsPrefID {
+			Merge ^zTrakLayoutPatch(PatchFileName,"BACKUP",PrefGlobalI,"Index","SITE",SiteCode,"COLUMNS"_Context,ComponentName) = ^websys.PreferencesI("Index","SITE",SiteCode,"COLUMNS"_Context,ComponentName)
+			Merge ^zTrakLayoutPatch(PatchFileName,"BACKUP",PrefGlobalI,"AppKey",ComponentName,"COLUMNS"_Context) = ^websys.PreferencesI("AppKey",ComponentName,"COLUMNS"_Context)
+			
+			Kill ^websys.PreferencesI("Index","SITE",SiteCode,"COLUMNS"_Context,ComponentName)
+			Kill ^websys.PreferencesI("AppKey",ComponentName,"COLUMNS"_Context)
+		}
+		If RowsPrefID {
+			Merge ^zTrakLayoutPatch(PatchFileName,"BACKUP",PrefGlobalI,"Index","SITE",SiteCode,"ROWS"_Context,ComponentName) = ^websys.PreferencesI("Index","SITE",SiteCode,"ROWS"_Context,ComponentName)
+			Merge ^zTrakLayoutPatch(PatchFileName,"BACKUP",PrefGlobalI,"AppKey",ComponentName,"ROWS"_Context) = ^websys.PreferencesI("AppKey",ComponentName,"ROWS"_Context)
+
+			Kill ^websys.PreferencesI("Index","SITE",SiteCode,"ROWS"_Context,ComponentName)
+			Kill ^websys.PreferencesI("AppKey",ComponentName,"ROWS"_Context)
+		}
+		
+		#; Clear out translations
+		Set Subscript=""
+		Set LanguageID = 2    // English
+		For {
+			Set Subscript = $Order(^websys.TranslationD(Subscript))
+			Quit:Subscript=""
+			If Subscript = "COMP" {
+				If $Data(^websys.TranslationD(Subscript,LanguageID,ComponentID_Context)) {
+					Merge ^zTrakLayoutPatch(PatchFileName,"BACKUP","^websys.TranslationD",Subscript,LanguageID,ComponentID_Context) = ^websys.TranslationD(Subscript,LanguageID,ComponentID_Context)
+					Kill ^websys.TranslationD(Subscript,LanguageID,ComponentID_Context)
+				}
+				Continue
+			}
+
+			If $Data(^websys.TranslationD(Subscript,ComponentID_Context)) {
+				Merge ^zTrakLayoutPatch(PatchFileName,"BACKUP","^websys.TranslationD",Subscript,ComponentID_Context) = ^websys.TranslationD(Subscript,ComponentID_Context)
+				Kill ^websys.TranslationD(Subscript,ComponentID_Context)
+			}
+		}
+		
+		#; Clear out data nodes for Preferences
+		For PrefID = ColumnsPrefID, RowsPrefID, LayoutPrefID {
+			If PrefID && ($Data(^websys.PreferencesD(PrefID))) {
+				Merge ^zTrakLayoutPatch(PatchFileName,"BACKUP",PrefGlobalD,PrefID) = ^websys.PreferencesD(PrefID)
+				Kill ^websys.PreferencesD(PrefID)
+			}
+		}
+	}
+	Quit Status
+]]></Implementation>
+</Method>
+</Class>
+
+
+<Project name="HieCOMMONLIBSSHToolsV1" LastModified="2018-12-30 21:46:24.481913">
   <Items>
     <ProjectItem name="CUSTOM.CORE.REST.SSHToolUtils" type="CLS"></ProjectItem>
     <ProjectItem name="CUSTOM.CORE.Util.SSHTool.GeneralConfig" type="CLS"></ProjectItem>
     <ProjectItem name="CUSTOM.CORE.Util.SSHTool.Log" type="CLS"></ProjectItem>
     <ProjectItem name="CUSTOM.CORE.Util.SSHTool.TargetConfig" type="CLS"></ProjectItem>
     <ProjectItem name="CUSTOM.CORE.Util.SSHTool.TargetGroupConfig" type="CLS"></ProjectItem>
+    <ProjectItem name="CUSTOM.CORE.Util.TrakLayout.Configuration" type="CLS"></ProjectItem>
+    <ProjectItem name="CUSTOM.CORE.Util.TrakLayout.Utility" type="CLS"></ProjectItem>
   </Items>
 </Project>
 </Export>

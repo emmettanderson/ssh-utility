@@ -22,6 +22,7 @@ export class LayoutItemInt {
 export class TrakLayoutComponent implements OnInit, OnChanges {
   @Input() ChartBookItems: any = [];
   @Output() sendDataToParent = new EventEmitter<any[]>();
+  @ViewChild('filename') filename: ElementRef;
   @ViewChild('changetypesel') changetypesel: ElementRef;
   @ViewChild('componentdiv') componentdiv: ElementRef;
   @ViewChild('component') component: ElementRef;
@@ -123,10 +124,21 @@ export class TrakLayoutComponent implements OnInit, OnChanges {
 
   onClickSaveLayoutFile(event) {
     // Call rest service to save patch file from posted LayoutItemArray
-    // Show/or activate button for Apply
+
     if (this.LayoutItemArray.length < 1) {
       alert('No layout items have been added to patch file');
+      return;
     }
+    if (this.filename.nativeElement.value === '') {
+      alert('Patch File Name Required');
+      this.filename.nativeElement.focus();
+      return;
+    }
+    this._trakLayoutService.saveLayoutFile(this.LayoutItemArray).subscribe();
+      // data => {this.response = data;});
+
+    // Show/or activate button for Apply
+    this.applybutton.nativeElement.disabled = 'false';
   }
 
   onClickApplyPatchFile(event) {

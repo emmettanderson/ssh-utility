@@ -1,31 +1,23 @@
 <div class='row'>
   <div class='column'>
       <span style='color: #3491d4;'>File Transfer</span>
-    <!--
-    <form #fileinputform
-        enctype='multipart/form-data'
-        style='display:none'>
-      <input #fileInput
-        name='fileInput'
-        style='display:none;'
-        type='file'
-        (change)='onFileInput($event)'>
-    </form>
-    -->
+      <button #addbutton
+            mat-stroked-button
+            matSuffix
+            style='float: right;'
+            (click)='addItem(newSrcItem.value, newDestItem.value)'
+            color='primary'>Add
+      </button>
+  </div>
+</div>
+<div class='row'>
+  <div class='column'>
     <mat-form-field style='width: 100%' action='postSourceFile( )'>
         <input matInput
               #newSrcItem
               placeholder='Source File (local)'
               style='min-width:15em;'>
     </mat-form-field>
-    <!--
-    <button
-          mat-stroked-button
-          matSuffix
-          style='float: right;'
-          (click)='fileInput.click()'>Browse
-    </button>
-    -->
   </div>
 </div>
 <div class='row'>
@@ -40,13 +32,6 @@
               placeholder='Destination File'
               style='min-width:15em;'>
     </mat-form-field>
-    <button #addbutton
-            mat-stroked-button
-            matSuffix
-            style='float: right;'
-            (click)='addItem(newSrcItem.value, newDestItem.value)'
-            color='primary'>Add
-    </button>
   </div>
 </div>
 <div class='row'>
@@ -78,3 +63,15 @@
   </div>
 </div>
 
+
+    <!--
+    <form #fileinputform
+        enctype='multipart/form-data'
+        style='display:none'>
+      <input #fileInput
+        name='fileInput'
+        style='display:none;'
+        type='file'
+        (change)='onFileInput($event)'>
+    </form>
+    -->

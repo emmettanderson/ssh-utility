@@ -1,5 +1,15 @@
 import { LayoutItemInt, LayoutItemArrayInt } from '../trak-layout/trak-layout.component';
 
+export class TrakLayoutConfig {
+  LocalLayoutDirectory: string;
+  LoadLayoutClassMethod: string;
+}
+
+export class ApplyPatch {
+  command: string;
+  srcFile: string;
+  destFile: string;
+}
 export class TrakLayoutFile {
   Id: number;
   FileName: string;

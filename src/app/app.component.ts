@@ -56,9 +56,9 @@ export class AppComponent implements OnInit {
     this.ProcessComplete = '1';
     this.Submitted = '';
   }
-  updateApplyTrakLayout(event) {
-    this.addCommand(event);  // need to pass command as string
-    this.addFiles(event, event);
+  updateApplyTrakLayout(input) {
+    this.addCommand(input.command);  // need to pass command as string
+    this.addFiles(input.srcFile, input.destFile);
   }
   updateCommandList(commandAry: string[]) {
     this.SubmitList.CommandStringList = commandAry.join('\n');
@@ -69,7 +69,7 @@ export class AppComponent implements OnInit {
     if (this.SubmitList.CommandStringList && this.SubmitList.CommandStringList !== '') {
       this.SubmitList.CommandStringList += command + '\n';
     } else {
-      this.SubmitList.CommandStringList += command;
+      this.SubmitList.CommandStringList = command;
     }
   }
   updateFileList(fileAry: FileArray) {
@@ -83,7 +83,8 @@ export class AppComponent implements OnInit {
       this.SubmitList.SourceFileList += srcFile + '\n';
       this.SubmitList.DestinationFileList += destFile + '\n';
     } else {
-      this.SubmitList.DestinationFileList += destFile;
+      this.SubmitList.SourceFileList = srcFile;
+      this.SubmitList.DestinationFileList = destFile;
     }
   }
   updateSessionLog(comp) {

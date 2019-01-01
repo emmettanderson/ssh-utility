@@ -115,12 +115,12 @@ td.mat-cell span {
   border-color: #007bff !important;
 }
 
-.mat-row:nth-child(even){
+.mat-row:nth-child(even), .mat-list-item:nth-child(even){
   background-color: honeydew;
 }
 
-.mat-row:nth-child(odd){
-  background-color: lightcyan;
+.mat-row:nth-child(odd), .mat-list-item:nth-child(odd){
+  background-color: aliceblue;
 }
 
 .mat-list-item {

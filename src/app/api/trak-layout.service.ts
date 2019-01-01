@@ -13,7 +13,7 @@ import {
 import { Injectable } from '@angular/core';
 import { ApiService } from './api.service';
 import { TrakLayoutApiConfig } from './api.config';
-import { TrakLayoutFile, SimpleRecord, ChartItem, ContextItem } from '../models/trak-layout';
+import { TrakLayoutFile, SimpleRecord, ChartItem, ContextItem, TrakLayoutConfig } from '../models/trak-layout';
 import { ApiConfig } from './api.config';
 
 
@@ -73,10 +73,24 @@ export class TrakLayoutService {
       .catch(this.errorHandler);
   }
 
+  public getLayoutConfig() {
+    console.log('getLayoutConfig service called');
+    return this.http
+      .get<TrakLayoutConfig[]>(this.actionUrl + 'getlayoutconfig/', this._headers)
+      .catch(this.errorHandler);
+  }
+
   public saveLayoutFile(patchFile: TrakLayoutFile) {
     console.log('post savelayoutfile service: ' + patchFile);
     return this.http
       .post(this.actionUrl + 'savelayoutfile/', patchFile, this._headers)
+      .catch(this.errorHandler);
+  }
+
+  public syncLocalLayout() {
+    console.log('Get syncLocalLayout service: ');
+    return this.http
+      .get(this.actionUrl + 'synclocallayout/', this._headers)
       .catch(this.errorHandler);
   }
 }

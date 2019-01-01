@@ -1,8 +1,8 @@
 import { Component, OnInit, EventEmitter, ViewChild, ElementRef } from '@angular/core';
 import { SimpleChange, OnChanges, Input, Output } from '@angular/core';
 import { TrakLayoutService } from '../api/trak-layout.service';
-import { CodeTable, SimpleRecord, ContextItem, ChartItem } from '../models/trak-layout';
-import { LayoutItem, LayoutItemArray, TrakLayoutFile } from '../models/trak-layout';
+import { CodeTable, SimpleRecord, ContextItem, ChartItem, ApplyPatch } from '../models/trak-layout';
+import { LayoutItem, LayoutItemArray, TrakLayoutFile, TrakLayoutConfig } from '../models/trak-layout';
 
 export class LayoutItemArrayInt {
   LayoutItem: LayoutItemInt;
@@ -30,7 +30,7 @@ export class TrakLayoutComponent implements OnInit, OnChanges {
   @ViewChild('chartbook') chartbook: ElementRef;
   @ViewChild('context') context: ElementRef;
   @ViewChild('chart') chart: ElementRef;
-  @ViewChild('applybutton') applybutton: ElementRef;
+  @ViewChild('applybutton') applybutton: any;
 
   FileName: string;
   selectedChangeType: any;
@@ -42,10 +42,17 @@ export class TrakLayoutComponent implements OnInit, OnChanges {
   ChartItems: ChartItem[];
   LayoutItem: LayoutItemInt;
   LayoutItemArray: any = [];
+  LayoutConfig: TrakLayoutConfig[];
+
+  response: any;
 
   constructor(private _trakLayoutService: TrakLayoutService) { }
 
   ngOnInit() {
+    console.log('getLayoutConfig');
+    this._trakLayoutService.getLayoutConfig().subscribe(data => {
+      this.LayoutConfig = data;
+    });
     console.log('getChangeTypeList');
     this._trakLayoutService.getChangeTypeList().subscribe(data => {
       this.ChangeType = data;
@@ -105,13 +112,15 @@ export class TrakLayoutComponent implements OnInit, OnChanges {
         this.LayoutItem.LayoutItemType = new ContextItem;
         this.LayoutItem.LayoutItemType.ComponentId = this.selectedComponent.value;
         this.LayoutItem.LayoutItemType.Context = item.value;
-        description = this.selectedComponent.value + ' - ' + item.value;
+        description = this.selectedComponent.source.selected._element.nativeElement.innerText;
+        description += ' - ' + item.source.selected._element.nativeElement.innerText;
         break;
       case ('Charts'):
         this.LayoutItem.LayoutItemType = new ChartItem;
         this.LayoutItem.LayoutItemType.ChartBookId = this.selectedChartBook.value;
         this.LayoutItem.LayoutItemType.ChartId = item.value;
-        description = this.selectedChartBook.value + ' - ' + item.name;
+        description = this.selectedChartBook.source.selected._element.nativeElement.innerText;
+        description += ' - ' + item.source.selected._element.nativeElement.innerText;
         break;
       default:
         break;
@@ -134,18 +143,37 @@ export class TrakLayoutComponent implements OnInit, OnChanges {
       this.filename.nativeElement.focus();
       return;
     }
-    this._trakLayoutService.saveLayoutFile(this.LayoutItemArray).subscribe();
-      // data => {this.response = data;});
 
+    const trakLayoutFile = new TrakLayoutFile;
+    trakLayoutFile.FileName = this.filename.nativeElement.value;
+    trakLayoutFile.LayoutItemList = this.LayoutItemArray;
+
+    this._trakLayoutService.saveLayoutFile(trakLayoutFile).subscribe(data => { this.response = data; });
     // Show/or activate button for Apply
-    this.applybutton.nativeElement.disabled = 'false';
+    this.applybutton.disabled = 'false';
   }
-
-  onClickApplyPatchFile(event) {
+  onClickSyncLocalLayout() {
+    if (!confirm('This will update your local layout. Proceed?')) {
+      return false;
+    }
+    this._trakLayoutService.syncLocalLayout().subscribe(
+      data => {this.response = data;
+    });
+  }
+  onClickApplyPatchFile() {
     // call rest service:
     //    Add file-list item with patch file
     //    Add command-list item that calls COS class method to load patch file
     // LayoutFile only applied if the file/command is submitted
+    const applyitem: any = [];
+    applyitem.srcFile = this.LayoutConfig['LocalLayoutDirectory'] + this.filename.nativeElement.value;
+    applyitem.destFile = '[LayoutDirectory]/' + this.filename.nativeElement.value;
+    applyitem.command = 'Do ##Class(' + this.LayoutConfig['LoadLayoutClassMethod'].split('|')[0];
+    applyitem.command +=  ').' + this.LayoutConfig['LoadLayoutClassMethod'].split('|')[1];
+    applyitem.command += '("' + applyitem.destFile + '",1)';
+
+    console.log('onClickApplyPatchFile: ' + applyitem);
+    this.sendDataToParent.emit(applyitem);
   }
   onSelectComponentItem(componentid) {
     this.selectedComponent = componentid;
@@ -175,6 +203,5 @@ export class TrakLayoutComponent implements OnInit, OnChanges {
 
   removeItem(index) {
     this.LayoutItemArray.splice(index, 1);
-    this.sendDataToParent.emit(this.LayoutItemArray);
   }
 }

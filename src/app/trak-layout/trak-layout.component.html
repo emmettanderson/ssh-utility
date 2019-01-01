@@ -1,11 +1,19 @@
 <div class='row'>
   <div class='column'>
-    <span style='color: #3491d4;'>Trak Layout Patch</span>
+    <span style='font-size: 14px;color: #3491d4;'>Trak Layout Patch</span>
     <div style='float: right; margin-top: 3px; margin-right: 3px;'>
+      <button
+        mat-raised-button
+        style='margin-left: 10px; vertical-align: top;'
+        color='primary'
+        title='This will sync your local layout with the current environment layout as configured in .TrakLayout.Configuration:SyncTarget. \nA backup layout file of your local environment will be stored before applying IDEV layout.'
+        (click)='onClickSyncLocalLayout()'>Sync Local Layout
+    </button>
       <button
           mat-raised-button
           style='margin-left: 10px; vertical-align: top;'
           color='primary'
+          title='This will create a layout patch file on your local environment. \nThe file location is determined by your CUSTOM.CORE.Util.TrakLayout.Configuration:LocalLayoutDirectory'
           (click)='onClickSaveLayoutFile($event)'>Save Patch
       </button>
       <button
@@ -14,7 +22,8 @@
           [disabled]='true'
           style='margin-left: 10px; vertical-align: top;'
           color='primary'
-          (click)='onClickApplyPatchFile($event)'>Apply
+          title='This will populate file list and command list to transfer and apply this layout patch file to the selected target group'
+          (click)='onClickApplyPatchFile()'>Apply Patch
       </button>
     </div>
     <mat-form-field class='example-full-width'>

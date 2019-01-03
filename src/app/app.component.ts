@@ -56,6 +56,17 @@ export class AppComponent implements OnInit {
     this.ProcessComplete = '1';
     this.Submitted = '';
   }
+  updateLogRowId(input) {
+    this.ProcessComplete = '0';
+    this.SessionLog = new SessionLog;
+    this.SessionLog.ProcessComplete = '0';
+    this.SessionLog.SessionLog = '';
+    this.Interval = '';
+    this.LogRowId = input;
+    this.Submitted = new Date();
+    console.log('app updateLogRowId: ' + input);
+  }
+
   updateApplyTrakLayout(input) {
     this.addCommand(input.command);  // need to pass command as string
     this.addFiles(input.srcFile, input.destFile);
@@ -98,6 +109,10 @@ export class AppComponent implements OnInit {
     this.SubmitList.TargetGroup = GroupName;
     console.log('app updateTargetGroup: ' + GroupName);
   }
+  clearForm() {
+    window.location.reload();
+  }
+
   submit(e) {
     console.log('submit: ' + this.SubmitList);
     this.ProcessComplete = '0';

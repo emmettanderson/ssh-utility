@@ -2,7 +2,7 @@ import { Component, Inject, EventEmitter, OnInit, ChangeDetectionStrategy} from 
 import { ViewChild, SimpleChange, OnChanges, ElementRef, Input, Output } from '@angular/core';
 import { OutputDisplayService } from '../api/output-display.service';
 import { SessionLog } from '../models/submit.model';
-import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material';
+import { MatDialog, MatDialogRef, MAT_DIALOG_DATA, MatSpinner } from '@angular/material';
 
 export interface SessionLogInt {
   ProcessComplete: number | string;
@@ -26,11 +26,11 @@ export class OutputDisplayComponent implements OnInit, OnChanges {
   @Input() SessionLogText: any;
   @Input() ProcessComplete: any;
   @Input() interval: any;
-  // @Input('sessionLog') sessionLog;
   @Output() sendDataToParent = new EventEmitter<any>();
 
   @ViewChild('sessionlog') sessionlog: ElementRef;
   @ViewChild('sessionlogdiv') sessionlogdiv: ElementRef;
+  @ViewChild('spinner') spinner: ElementRef;
 
   public modalDialogRef: MatDialogRef<OutputDisplayModalComponent>;
   public showModal: boolean;
@@ -60,9 +60,12 @@ export class OutputDisplayComponent implements OnInit, OnChanges {
         this.checkStatus(this.SessionLog, this.interval);
         this.scrollToBottom();
         console.log('updateSessionLog SessionLog: ' + this.SessionLog.ProcessComplete);
-      }, 1000);
+      }, 5000);
       if (this.submitted && this.submitted !== '') {
-        setTimeout(() => { this.openModalDialog(); }, 100);
+        setTimeout(() => {
+          this.openModalDialog();
+          this.spinner.nativeElement.style.display = '';
+        }, 100);
       }
     }
   }
@@ -70,7 +73,7 @@ export class OutputDisplayComponent implements OnInit, OnChanges {
   scrollToBottom() {
     this.sessionlogdiv.nativeElement.focus();
     this.sessionlogdiv.nativeElement.scrollTop = this.sessionlogdiv.nativeElement.scrollHeight;
-    if (this.showModal && this.modalDialogRef) {
+    if (this.showModal && this.modalDialogRef && this.modalDialogRef.componentInstance) {
       this.modalDialogRef.componentInstance.scrollToBottom();
     }
   }
@@ -78,12 +81,14 @@ export class OutputDisplayComponent implements OnInit, OnChanges {
     // Check if process is complete
     if (sessionLog && typeof sessionLog !== 'undefined') {
       if (sessionLog.ProcessComplete !== '0') {
+        this.spinner.nativeElement.style.display = 'none';
         if (intervalId) {
           clearInterval(intervalId);
         }
       }
     } else {
       if (intervalId) {
+        this.spinner.nativeElement.style.display = 'inline-block';
         clearInterval(intervalId);
       }
     }
@@ -98,6 +103,11 @@ export class OutputDisplayComponent implements OnInit, OnChanges {
             this.modalDialogRef.componentInstance.data = {
               SessionLogText: this.SessionLog.SessionLog
             };
+            if (data.ProcessComplete === '1') {
+              this.modalDialogRef.componentInstance.spinner.nativeElement.style.display = 'none';
+            } else {
+              this.modalDialogRef.componentInstance.spinner.nativeElement.style.display = 'inline-block';
+            }
           }
           this.sendDataToParent.emit(this);
           console.log('output display service data: ', data);
@@ -121,11 +131,11 @@ export class OutputDisplayComponent implements OnInit, OnChanges {
   templateUrl: './output-display-modal.component.html'
 })
 export class OutputDisplayModalComponent implements OnChanges {
-  // ProcessComplete: number | string;
-  // SessionLog: string;
 
   @Input('SessionLogText') SessionLogText: any;
+  @ViewChild('spinner') spinner: ElementRef;
   @ViewChild('sessionlogmodal') sessionLogModal: ElementRef;
+
   constructor(
     public modalDialogRef: MatDialogRef<OutputDisplayModalComponent>,
     @Inject(MAT_DIALOG_DATA) public data: any
@@ -140,8 +150,9 @@ export class OutputDisplayModalComponent implements OnChanges {
     }
   }
   scrollToBottom() {
-    // this.sessionLogModal.nativeElement.focus();
-    this.sessionLogModal.nativeElement.scrollTop = this.sessionLogModal.nativeElement.scrollHeight;
+    if (this.sessionLogModal && this.sessionLogModal.nativeElement) {
+      this.sessionLogModal.nativeElement.scrollTop = this.sessionLogModal.nativeElement.scrollHeight;
+    }
   }
   onNoClick(): void {
     this.modalDialogRef.close();

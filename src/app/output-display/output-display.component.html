@@ -1,5 +1,13 @@
 <div style='width: 100%;display: inline-block;'>
-    <span style='color: #3491d4'>Session Log</span>
+    <span class='compcaption'>Session Log
+      <div #spinner style='display: none;'>
+        <mat-progress-spinner
+          diameter='20'
+          color='primary'
+          mode='indeterminate'>
+        </mat-progress-spinner>
+      </div>
+    </span>
     <button mat-raised-button
           style='float: right;'
           color='primary'

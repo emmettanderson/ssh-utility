@@ -1,6 +1,6 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
-import { HttpClientModule } from '@angular/common/http';
+import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 
 import { MatTableModule,
          MatCheckboxModule,
@@ -13,13 +13,14 @@ import { MatTableModule,
          MatSelectModule,
          MatDialogModule,
          MatAutocompleteModule,
+         MatProgressSpinnerModule,
          MatButtonModule} from '@angular/material';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { NgSelectModule } from '@ng-select/ng-select';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'; // <-- NgModel lives here
 
 // Api Service
-import { ApiService } from './api/api.service';
+import { ApiService, HttpErrorInterceptor } from './api/api.service';
 
 // Page Components
 import { AppComponent } from './app.component';
@@ -27,9 +28,7 @@ import { TargetListComponent } from './target-list/target-list.component';
 import { HistoryListComponent } from './history-list/history-list.component';
 import { CommandListComponent } from './command-list/command-list.component';
 import { FileListComponent } from './file-list/file-list.component';
-// import { OutputDisplayComponent } from './output-display/output-display.component';
 import { OutputDisplayModalComponent, OutputDisplayComponent } from './output-display/output-display.component';
-import { DataService } from './api/data.service';
 import { TrakLayoutComponent } from './trak-layout/trak-layout.component';
 
 @NgModule({
@@ -49,6 +48,7 @@ import { TrakLayoutComponent } from './trak-layout/trak-layout.component';
     HttpClientModule,
     BrowserAnimationsModule,
     MatButtonModule,
+    MatProgressSpinnerModule,
     MatTableModule,
     MatListModule,
     MatSortModule,
@@ -65,6 +65,7 @@ import { TrakLayoutComponent } from './trak-layout/trak-layout.component';
   ],
   exports: [
     MatTableModule,
+    MatProgressSpinnerModule,
     MatButtonModule,
     MatListModule,
     MatSortModule,
@@ -76,7 +77,14 @@ import { TrakLayoutComponent } from './trak-layout/trak-layout.component';
     OutputDisplayModalComponent
   ],
   entryComponents: [OutputDisplayModalComponent],
-  providers: [ApiService, DataService],
+  providers: [
+    ApiService,
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: HttpErrorInterceptor,
+      multi: true
+    }
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

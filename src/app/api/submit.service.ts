@@ -22,8 +22,6 @@ import { ApiConfig } from './api.config';
 export class SubmitService {
   private actionUrl: string;
 
-  private errorHandler: ApiService['handleError'];
-
   constructor(
     private http: HttpClient,
     public _SubmitListApiConfig: SubmitListApiConfig,
@@ -39,8 +37,7 @@ export class SubmitService {
 
   public submitList(submitList: SubmitList) {
     console.log('SubmitListService call service SubmitList: ' + submitList);
-    const response = this.http.post<any>(this.actionUrl, submitList, this._headers)
-      .catch(this.errorHandler);
+    const response = this.http.post<any>(this.actionUrl, submitList, this._headers);
     return response;
   }
 }

@@ -1,6 +1,8 @@
 # SshUtility
 Tool for executing cache terminal commands via SSH and transferring files via SFTP to multiple AIX servers.
 
+Added custom TrakLayoutPatch save/load feature - This allows users to apply trak layout changes for specific component, context, chart, chart item, transform, icon definition, etc. rather than applying layout changes instance-wide.
+
 *** Apologies - Currently designed for Northwell Health site implementation.
 ***             Ongoing development to make site-agnostic. 
 
@@ -19,10 +21,12 @@ Tool for executing cache terminal commands via SSH and transferring files via SF
   
   > Must be on production with same namespace as one configured for REST service web application created in step #2
 
-4.) Run methods in desired HS namespace: 
+4.) Run methods in desired HS namespace - Modify Populate method to suit specific implementation - current code is for Northwell implementations: 
   > Do ##Class(CUSTOM.CORE.Util.SSHTool.TargetConfig).Populate() 
   
   > Do ##Class(CUSTOM.CORE.Util.SSHTool.TargetGroupConfig).Populate()
+
+  > Do ##Class(CUSTOM.CORE.Util.TrakLayout.Configuration).Populate()
 
 5.) Add your local instance user:pass to /src/app/api/api.config.ts:
   > Class ApiConfig:
@@ -39,6 +43,9 @@ Tool for executing cache terminal commands via SSH and transferring files via SF
   > > apiUrl: 'http://localhost:57772'
   
   > };
+
+7.) For Trak Layout Patch Feature to work:
+  > CUSTOM.CORE.Util.TrakLayout.Utility must be deployed to all environments where Trak Layout patches might be applied. This is to facilitate the loading/applying of the layout patch file.   
 
 
 *** Currently writing install method to handle these steps and allow user to enter config ***

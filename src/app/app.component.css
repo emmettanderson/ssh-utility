@@ -8,7 +8,15 @@ h3 {
   color: #3491d4;
   text-align: center;
 }
-
+.spinner {
+  display: none !important;
+  height: 24px !important;
+  width: 24px !important;
+}
+.compcaption {
+  font-size: 14px;
+  color: #3491d4;
+}
 .stickyheader {
   position: fixed;
   background: white;
@@ -31,7 +39,7 @@ h3 {
 .stickyheaderdiv {
   position: relative;
   top: -27px;
-  left: -75px;
+  left: -180px;
   text-align: left;
   font-size:1em;
   float: right;

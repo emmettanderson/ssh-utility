@@ -48,7 +48,6 @@ export class FileListComponent implements OnInit, OnChanges {
   }
 
   addItem(newSrcItem, newDestItem, onchangeflag) {
-    // alert('newSrcItem: ' + newSrcItem + '\nnewDestItem: ' + newDestItem);
     if (newSrcItem && newDestItem) {
       this.srcFileAry.push(newSrcItem);
       this.destFileAry.push(newDestItem);

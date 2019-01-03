@@ -1,6 +1,7 @@
 import { Component, OnInit, EventEmitter, ViewChild, ElementRef } from '@angular/core';
 import { SimpleChange, OnChanges, Input, Output } from '@angular/core';
 import { TrakLayoutService } from '../api/trak-layout.service';
+import { SessionLog } from '../models/submit.model';
 import { CodeTable, SimpleRecord, ContextItem, ChartItem, ApplyPatch } from '../models/trak-layout';
 import { LayoutItem, LayoutItemArray, TrakLayoutFile, TrakLayoutConfig } from '../models/trak-layout';
 
@@ -21,7 +22,13 @@ export class LayoutItemInt {
 })
 export class TrakLayoutComponent implements OnInit, OnChanges {
   @Input() ChartBookItems: any = [];
+  @Input() LogRowId: string;
+  @Input() SessionLog: SessionLog;
+  @Input() SessionLogText: string;
+  @Input() ProcessComplete: any;
+  @Input() Interval: any;
   @Output() sendDataToParent = new EventEmitter<any[]>();
+  @Output() sendLogRowId = new EventEmitter<any>();
   @ViewChild('filename') filename: ElementRef;
   @ViewChild('changetypesel') changetypesel: ElementRef;
   @ViewChild('componentdiv') componentdiv: ElementRef;
@@ -31,6 +38,7 @@ export class TrakLayoutComponent implements OnInit, OnChanges {
   @ViewChild('context') context: ElementRef;
   @ViewChild('chart') chart: ElementRef;
   @ViewChild('applybutton') applybutton: any;
+  @ViewChild('savepatch') savepatch: any;
 
   FileName: string;
   selectedChangeType: any;
@@ -43,7 +51,6 @@ export class TrakLayoutComponent implements OnInit, OnChanges {
   LayoutItem: LayoutItemInt;
   LayoutItemArray: any = [];
   LayoutConfig: TrakLayoutConfig[];
-
   response: any;
 
   constructor(private _trakLayoutService: TrakLayoutService) { }
@@ -62,6 +69,13 @@ export class TrakLayoutComponent implements OnInit, OnChanges {
     this.selectedComponent = '';
   }
   ngOnChanges(changes: {[propKey: string]: SimpleChange}) {
+    /*
+    if (typeof changes['LogRowId'] !== 'undefined'
+      && typeof changes['LogRowId'].currentValue !== 'undefined') {
+        if (changes['LogRowId'].currentValue !== '') {
+          this.sendLogRowId.emit(changes['LogRowId'].currentValue);
+        }
+    }
     console.log('change log chartbookitems: ' + changes['ChartBookItems'].currentValue);
     if (typeof changes['ChartBookItems'].currentValue !== 'undefined') {
       this.onSelectChartBook(changes['ChartBookItems'].currentValue);
@@ -70,6 +84,7 @@ export class TrakLayoutComponent implements OnInit, OnChanges {
     if (typeof changes['ChartItems'].currentValue !== 'undefined') {
       this.onSelectChartItem(changes['ChartItems'].currentValue);
     }
+    */
   }
   onSelectChangeType(changetype) {
     console.log('onSelectChangeType: ' + changetype.value);
@@ -129,6 +144,8 @@ export class TrakLayoutComponent implements OnInit, OnChanges {
     this.LayoutItem.ChangeType = this.selectedChangeType.value;
     this.LayoutItem.Description = description;
     this.LayoutItemArray.push(this.LayoutItem);
+
+    this.savepatch.disabled = 'false';
   }
 
   onClickSaveLayoutFile(event) {
@@ -156,9 +173,16 @@ export class TrakLayoutComponent implements OnInit, OnChanges {
     if (!confirm('This will update your local layout. Proceed?')) {
       return false;
     }
-    this._trakLayoutService.syncLocalLayout().subscribe(
-      data => {this.response = data;
-    });
+    this.ProcessComplete = '0';
+    this.SessionLog = new SessionLog;
+    this.SessionLog.ProcessComplete = '0';
+    this.SessionLog.SessionLog = '';
+    this.Interval = '';
+    this.LogRowId = '';
+    this._trakLayoutService.syncLocalLayout().subscribe(data => {
+        this.LogRowId = data.LogRowId;
+        this.sendLogRowId.emit(this.LogRowId);
+     });
   }
   onClickApplyPatchFile() {
     // call rest service:

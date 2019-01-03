@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2017.1.1 (Build 111_0_17521U)" ts="2018-12-31 19:20:43">
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2017.1.1 (Build 111_0_17521U)" ts="2019-01-02 19:28:05">
 <Class name="CUSTOM.CORE.REST.SSHToolUtils">
 <Super>%CSP.REST</Super>
-<TimeChanged>65013,61483.274572</TimeChanged>
+<TimeChanged>65015,68400.36535</TimeChanged>
 <TimeCreated>64999,56985</TimeCreated>
 
 <Parameter name="HandleCorsRequest">
@@ -110,8 +110,8 @@ This UrlMap maps http requests to the classmethod to which it should be dispatch
 	Try {
 		Set CodeString = $System.Encryption.Base64Decode(CodeString)
 		
-		If $Extract(CodeString) '= $C(9) {
-			Set CodeString = $C(9)_CodeString
+		If $Extract(CodeString) '= " " {
+			Set CodeString = " "_CodeString
 		}
 		Kill Error
 		Set Status = ##Class(%Routine).CheckSyntax(CodeString, .Error)
@@ -227,6 +227,7 @@ If RowID passed, remove the row and return history list</Description>
 <FormalSpec>JsonString:%String=""</FormalSpec>
 <ReturnType>%String</ReturnType>
 <Implementation><![CDATA[
+	Set JsonString = $Replace(JsonString,"\","/")
 	Set JsonString = $Replace(JsonString,$C(13),"\r")         // Replace CR with regexp
 	Set JsonString = $Replace(JsonString,$C(10),"\n")         // Replace LF with regexp
 	Set JsonString = $Replace(JsonString,$C(9),"\t")          // Replace TAB with regexp
@@ -489,7 +490,7 @@ Need to create credentials on Local AG production for SSHLogin and ADLogin</Desc
 			Set LogString = Target_": Executing Command >>>> "_$Replace(CommandString, HSCredentials.Password, "******")
 			Do ..LogEntry(.LogObject, LogString)
 		
-			Set Status = sshObject.Execute(CommandString,.tDevice)
+			Set Status = sshObject.Execute(CommandString, .tDevice)
 			If $$$ISERR(Status) {
 				Set LogString = Target_": Error executing command >>> "_
 					$$GetErrorText^%apiOBJ(Status)_$C(13,10)_" **** Quitting."
@@ -1084,7 +1085,7 @@ This is the default environment used to sync your local environment</Description
 Custom Utils for saving/loading Trak Layout/Column/Row changes</Description>
 <Abstract>1</Abstract>
 <IncludeCode>HS.Common</IncludeCode>
-<TimeChanged>65013,64721.093498</TimeChanged>
+<TimeChanged>65015,69609.395446</TimeChanged>
 <TimeCreated>65012,48104.880692</TimeCreated>
 
 <Parameter name="UserList">
@@ -1450,127 +1451,177 @@ Sync Local Layout - called from task manager</Description>
 	Set LogObject.LogDate = +$Horolog
 	Set LogObject.LogTime = $Piece($Horolog, ",", 2)
 	
-	Set ConfigObject = ##Class(CUSTOM.CORE.Util.TrakLayout.Configuration).%OpenId(1)
-	If '$IsObject(ConfigObject) {
-		Set LogString = "Unable to load Trak Config Object."
-		Do ##Class(CUSTOM.CORE.REST.SSHToolUtils).LogEntry(LogObject, LogString, 1)
-		Quit 1
-	}
-	
-	#; Save a backup laypout file
-	Set Status = ##Class(HS.Util.Installer.Trak).SaveLayout(ConfigObject.LocalLayoutDirectory_"trak_full_layout_presync_"_$ZD($Horolog, 8)_".xml",0)
-	If $$$ISERR(Status) {
-		Set LogString = "Unable to save backup of local layout."_
-			$C(13,10)_$$GetErrorText^%apiOBJ(Status)_". Quitting."
-		Do ##Class(CUSTOM.CORE.REST.SSHToolUtils).LogEntry(LogObject, LogString, 1)
-		Quit 1
-	} Else {
-		Set LogString = "Backing up current layout..."
-		Do ##Class(CUSTOM.CORE.REST.SSHToolUtils).LogEntry(LogObject, LogString, 0)
-	}
-	
-	Set LogObject.Description = "Sync Local Layout - "_ConfigObject.SyncTargetGroup.GroupName
-	Set LogObject.TargetGroup = ConfigObject.SyncTargetGroup
-	If '$IsObject(LogObject.TargetGroup) {
-		Set LogString = "Unable to load Target Group Object."
-		Do ##Class(CUSTOM.CORE.REST.SSHToolUtils).LogEntry(LogObject, LogString, 1)
-		Quit 1
-	}
-	
-	Set TargetObject = LogObject.TargetGroup.TargetList.GetAt(1)
-	If '$IsObject(TargetObject) {
-		Set LogString = "Unable to load Target Object."
-		Do ##Class(CUSTOM.CORE.REST.SSHToolUtils).LogEntry(LogObject, LogString, 1)
-		Quit 1
-	}
-	
-	Set RemoteFileName = "trak_full_"_TargetObject.HostName_"_"_$ZD($Horolog, 8)_".xml"
-	Set LogObject.CommandStringList = $ListBuild("Do ##Class(HS.Util.Installer.Trak).SaveLayout("""_TargetObject.DefaultHomeDirectory_RemoteFileName_""")") 
-
-	#; Send command to save layout in the target environment
 	Set Status = LogObject.%Save()
-	If $$$ISERR(Status) {
-		Set LogString = "Unable to save log object."_
-			$C(13,10)_$$GetErrorText^%apiOBJ(Status)_". Quitting."
-		Do ##Class(CUSTOM.CORE.REST.SSHToolUtils).LogEntry(LogObject, LogString, 1)
-		Quit 1
-	}
+	Write "{""LogRowId"":"""_LogObject.%Id()_"""}" 
 	
-	#; Run command to build remote layout file
-	Do ##Class(CUSTOM.CORE.REST.SSHToolUtils).RunSSHCommand(LogObject.%Id())
+	Job ..SyncLocalLayoutJob(LogObject.%Id())
 	
-	Set Status = ##Class(CUSTOM.CORE.REST.SSHToolUtils).GetCredentials(TargetObject, .HSCredentials, .SSHCredentials)
-	If $$$ISERR(Status) {
-		Set LogString = "Unable to load credentials."_
-			$C(13,10)_$$GetErrorText^%apiOBJ(Status)_". Quitting."
-		Do ##Class(CUSTOM.CORE.REST.SSHToolUtils).LogEntry(LogObject, LogString, 1)
-		Quit 1
-	}
-				
-	Set sshObject = ##class(%Net.SSH.Session).%New()
- 	Set LogString = "**** SYNC PROCESS STARTING ****"_$C(13,10)_
- 					"Connecting to "_TargetObject.HostUrl
- 	Do ##Class(CUSTOM.CORE.REST.SSHToolUtils).LogEntry(LogObject, LogString, 0)
- 	
- 	#; CONNECT TO SSH SESSION
-	Set Status = sshObject.Connect(TargetObject.HostUrl)
- 	If $$$ISERR(Status) {
-		Set LogString = "Error connecting: "_TargetObject.HostUrl_
-			$C(13,10)_$$GetErrorText^%apiOBJ(Status)_". Quitting."
-		Do ##Class(CUSTOM.CORE.REST.SSHToolUtils).LogEntry(LogObject, LogString, 1)	
-		Quit Status
-	} Else {
-		Set LogString = "Connected: "_TargetObject.HostUrl
-		Do ##Class(CUSTOM.CORE.REST.SSHToolUtils).LogEntry(LogObject, LogString, 0)
-	}
-	
-	#; AUTHENTICATE
-	Set Status = sshObject.AuthenticateWithUsername(SSHCredentials.Username,SSHCredentials.Password)
-	If $$$ISERR(Status) {
-		Set LogString = "Error authenticating: "_SSHCredentials.Username_
-						$$GetErrorText^%apiOBJ(Status)_". Quitting."
-		Do ##Class(CUSTOM.CORE.REST.SSHToolUtils).LogEntry(LogObject, LogString, 1)
-		Quit Status
-	} Else {
-		Set LogString = "Authenticated: "_SSHCredentials.Username
-		Do ##Class(CUSTOM.CORE.REST.SSHToolUtils).LogEntry(LogObject, LogString, 0)
-	}
-	
-	#; OPEN SFTP CONNECTION
-	Set Status = sshObject.OpenSFTP(.sftpObject)
-	If $$$ISERR(Status) {
-		Set LogString = "Error opening SFTP session: "_$c(13,10)_
-						$$GetErrorText^%apiOBJ(Status)_". Quitting."
-		Do ##Class(CUSTOM.CORE.REST.SSHToolUtils).LogEntry(LogObject, LogString, 1)
-		Quit Status
-	} Else {
-		Set LogString = "SFTP session opened... "
-		Do ##Class(CUSTOM.CORE.REST.SSHToolUtils).LogEntry(LogObject, LogString, 0)
-	}
+	Quit Status
+]]></Implementation>
+</Method>
 
-	#; GET SYNC FILES ON TARGET SERVER
-	Kill FileList,Files
-	Set Status = sftpObject.Get(TargetObject.DefaultHomeDirectory_RemoteFileName, ConfigObject.LocalLayoutDirectory_RemoteFileName)
-	If $$$ISERR(Status) {
-		Set LogString = "Error Retrieving file at "_
-						TargetObject.DefaultHomeDirectory_RemoteFileName_". Quitting."
-		Do ##Class(CUSTOM.CORE.REST.SSHToolUtils).LogEntry(LogObject, LogString, 1)
-		Quit Status	
-	}
-
-	#; Load layout file from remote environment
-	Set Status = ##Class(HS.Util.Installer.Trak).LoadLayout(ConfigObject.DefaultLocalNamespace, ConfigObject.LocalLayoutDirectory_RemoteFileName)
-	If $$$ISERR(Status) {
-		Set LogString = "Error loading layout file: "_ConfigObject.DefaultLocalNamespace_"> "_
-						ConfigObject.LocalLayoutDirectory_RemoteFileName_
-						$C(13,10)_$$GetErrorText^%apiOBJ(Status)_". Quitting."
-		Do ##Class(CUSTOM.CORE.REST.SSHToolUtils).LogEntry(LogObject, LogString, 1)
-		Quit Status
-	}
+<Method name="SyncLocalLayoutJob">
+<Description>
+Sync Local Layout - called from task manager</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>LogObjectID:%String=""</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	#Dim sftpObject As %Net.SSH.SFTP
+	#Dim TargetGroup As CUSTOM.CORE.Util.SSHTool.TargetGroupConfig
+	#Dim TargetObject As CUSTOM.CORE.Util.SSHTool.TargetConfig
 	
+	Set Status = $$$OK
+	Try {
+		Set LogObject = ##Class(CUSTOM.CORE.Util.SSHTool.Log).%OpenId(LogObjectID)
+		If '$IsObject(LogObject) Quit
+		
+		Set ConfigObject = ##Class(CUSTOM.CORE.Util.TrakLayout.Configuration).%OpenId(1)
+		If '$IsObject(ConfigObject) {
+			Set LogString = "Unable to load Trak Config Object."
+			Do ##Class(CUSTOM.CORE.REST.SSHToolUtils).LogEntry(.LogObject, LogString, 0)
+			Quit
+		}
+		
+		#; Save a backup laypout file
+		Set Status = ##Class(HS.Util.Installer.Trak).SaveLayout(ConfigObject.LocalLayoutDirectory_"trak_full_layout_presync_"_$ZD($Horolog, 8)_".xml",0)
+		If $$$ISERR(Status) {
+			Set LogString = "Unable to save backup of local layout."_
+				$C(13,10)_$$GetErrorText^%apiOBJ(Status)_". Quitting."
+			Do ##Class(CUSTOM.CORE.REST.SSHToolUtils).LogEntry(.LogObject, LogString, 0)
+			Quit
+		} Else {
+			Set LogString = "Backing up current layout..."
+			Do ##Class(CUSTOM.CORE.REST.SSHToolUtils).LogEntry(.LogObject, LogString, 0)
+		}
+		
+		Set LogObject.Description = "Sync Local Layout - "_ConfigObject.SyncTargetGroup.GroupName
+		Set LogObject.TargetGroup = ConfigObject.SyncTargetGroup
+		If '$IsObject(LogObject.TargetGroup) {
+			Set LogString = "Unable to load Target Group Object."
+			Do ##Class(CUSTOM.CORE.REST.SSHToolUtils).LogEntry(.LogObject, LogString, 0)
+			Quit
+		}
+		
+		Set TargetObject = LogObject.TargetGroup.TargetList.GetAt(1)
+		If '$IsObject(TargetObject) {
+			Set LogString = "Unable to load Target Object."
+			Do ##Class(CUSTOM.CORE.REST.SSHToolUtils).LogEntry(.LogObject, LogString, 0)
+			Quit
+		}
+		
+		Set RemoteFileName = "trak_full_"_TargetObject.HostName_"_"_$ZD($Horolog, 8)_".xml"
+		Set LogObject.CommandStringList = $ListBuild("Do ##Class(HS.Util.Installer.Trak).SaveLayout("""_TargetObject.DefaultHomeDirectory_RemoteFileName_""")") 
+
+		#; Send command to save layout in the target environment
+		Set Status = LogObject.%Save()
+		If $$$ISERR(Status) {
+			Set LogString = "Unable to save log object."_
+				$C(13,10)_$$GetErrorText^%apiOBJ(Status)_". Quitting."
+			Do ##Class(CUSTOM.CORE.REST.SSHToolUtils).LogEntry(.LogObject, LogString, 0)
+			Quit
+		}
+		
+		#; Run command to build remote layout file
+		Do ##Class(CUSTOM.CORE.REST.SSHToolUtils).RunSSHCommand(LogObject.%Id())
+		
+		Set Status = ##Class(CUSTOM.CORE.REST.SSHToolUtils).GetCredentials(TargetObject, .HSCredentials, .SSHCredentials)
+		If $$$ISERR(Status) {
+			Set LogString = "Unable to load credentials."_
+				$C(13,10)_$$GetErrorText^%apiOBJ(Status)_". Quitting."
+			Do ##Class(CUSTOM.CORE.REST.SSHToolUtils).LogEntry(.LogObject, LogString, 0)
+			Quit
+		}
+					
+		Set sshObject = ##class(%Net.SSH.Session).%New()
+	 	Set LogString = "**** SYNC PROCESS STARTING ****"_$C(13,10)_
+	 					"Connecting to "_TargetObject.HostUrl
+	 	Do ##Class(CUSTOM.CORE.REST.SSHToolUtils).LogEntry(.LogObject, LogString, 0)
+	 	
+	 	#; CONNECT TO SSH SESSION
+		Set Status = sshObject.Connect(TargetObject.HostUrl)
+	 	If $$$ISERR(Status) {
+			Set LogString = "Error connecting: "_TargetObject.HostUrl_
+				$C(13,10)_$$GetErrorText^%apiOBJ(Status)_". Quitting."
+			Do ##Class(CUSTOM.CORE.REST.SSHToolUtils).LogEntry(.LogObject, LogString, 0)	
+			Quit
+		} Else {
+			Set LogString = "Connected: "_TargetObject.HostUrl
+			Do ##Class(CUSTOM.CORE.REST.SSHToolUtils).LogEntry(.LogObject, LogString, 0)
+		}
+		
+		#; AUTHENTICATE
+		Set Status = sshObject.AuthenticateWithUsername(SSHCredentials.Username,SSHCredentials.Password)
+		If $$$ISERR(Status) {
+			Set LogString = "Error authenticating: "_SSHCredentials.Username_
+							$$GetErrorText^%apiOBJ(Status)_". Quitting."
+			Do ##Class(CUSTOM.CORE.REST.SSHToolUtils).LogEntry(.LogObject, LogString, 0)
+			Quit
+		} Else {
+			Set LogString = "Authenticated: "_SSHCredentials.Username
+			Do ##Class(CUSTOM.CORE.REST.SSHToolUtils).LogEntry(.LogObject, LogString, 0)
+		}
+		
+		#; OPEN SFTP CONNECTION
+		Set Status = sshObject.OpenSFTP(.sftpObject)
+		If $$$ISERR(Status) {
+			Set LogString = "Error opening SFTP session: "_$c(13,10)_
+							$$GetErrorText^%apiOBJ(Status)_". Quitting."
+			Do ##Class(CUSTOM.CORE.REST.SSHToolUtils).LogEntry(.LogObject, LogString, 0)
+			Quit
+		} Else {
+			Set LogString = "SFTP session opened... "
+			Do ##Class(CUSTOM.CORE.REST.SSHToolUtils).LogEntry(.LogObject, LogString, 0)
+		}
+
+		#; GET SYNC FILES ON TARGET SERVER
+		Set LogString = "Retrieving Layout file (this could take some time...): "_
+						TargetObject.DefaultHomeDirectory_RemoteFileName
+		Do ##Class(CUSTOM.CORE.REST.SSHToolUtils).LogEntry(.LogObject, LogString, 0)
+
+		Set Status = sftpObject.Get(TargetObject.DefaultHomeDirectory_RemoteFileName, ConfigObject.LocalLayoutDirectory_RemoteFileName)
+		If $$$ISERR(Status) {
+			Set LogString = "Error Retrieving file at "_
+							TargetObject.DefaultHomeDirectory_RemoteFileName_". Quitting."
+			Do ##Class(CUSTOM.CORE.REST.SSHToolUtils).LogEntry(.LogObject, LogString, 0)
+			Quit	
+		}
+		
+		Set LogString = "File transfer complete..."_$C(13,10)_"Applying Layout File: "_$namespace_" - "_
+						ConfigObject.LocalLayoutDirectory_RemoteFileName
+		Do ##Class(CUSTOM.CORE.REST.SSHToolUtils).LogEntry(.LogObject, LogString, 0)
+			
+		#; Capture output from local instance		
+		Set Status = $System.OBJ.Load(ConfigObject.LocalLayoutDirectory_RemoteFileName, "-d", .Error)
+		#; Load layout file from remote environment
+		If $$$ISERR(Status) {
+			Set LogString = "Error loading layout file: "_ConfigObject.DefaultLocalNamespace_" ~ "_
+							ConfigObject.LocalLayoutDirectory_RemoteFileName_
+							$C(13,10)_$$GetErrorText^%apiOBJ(Status)_". Quitting."
+			Do ##Class(CUSTOM.CORE.REST.SSHToolUtils).LogEntry(.LogObject, LogString, 0)
+			Quit
+		}
+		Set LogString = "Checking for layout upgrade..."
+		Do ##Class(CUSTOM.CORE.REST.SSHToolUtils).LogEntry(.LogObject, LogString, 0)
+		Set tSC = ##class(HS.Util.Installer.Upgrade.Loader).LayoutUpgrade($namespace, "")
+		
+		Set LogString = " Regenerating layout files..."
+		Do ##Class(CUSTOM.CORE.REST.SSHToolUtils).LogEntry(.LogObject, LogString, 0)
+		
+		Set Status = ##Class(HS.Util.Installer.Trak).Regenerate($namespace)
+		If $$$ISERR(Status) {
+			Set LogString = "Error Regenerating layout files: "_
+							$C(13,10)_$$GetErrorText^%apiOBJ(Status)_". Quitting."
+			Do ##Class(CUSTOM.CORE.REST.SSHToolUtils).LogEntry(.LogObject, LogString, 0)
+			Quit
+		}
+		
+	} Catch {
+		Set Error = $ZE
+		Set LogString = "******* Process exited on Error: "_Error_$C(13,10)
+	}	
 	Set LogString = "Process Complete.."
-	Do ##Class(CUSTOM.CORE.REST.SSHToolUtils).LogEntry(LogObject, LogString, 1)
-	
+	Do ##Class(CUSTOM.CORE.REST.SSHToolUtils).LogEntry(.LogObject, LogString, 1)
 	Set Status = sftpObject.CloseSFTP()
 
 	Quit Status
@@ -1907,12 +1958,6 @@ Format LayoutListItems:
 	
 	#; Store session variables to Log class
 	Set LogObject = ##Class(CUSTOM.CORE.Util.SSHTool.Log).%New()
-	
-	/*
-	Set JsonPost = %request.Content.Read()
-	Set ^ZJA($zn,"savepatch",$zdt($h,8,1)) = JsonPost
-	Set Status = %request.Content.Rewind()
-	*/
 	
 	Set ConfigObject = ##Class(CUSTOM.CORE.Util.TrakLayout.Configuration).%OpenId(1)
 	If '$IsObject(ConfigObject) Quit 0

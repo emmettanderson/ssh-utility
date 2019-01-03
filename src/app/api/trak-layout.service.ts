@@ -23,8 +23,6 @@ import { ApiConfig } from './api.config';
 export class TrakLayoutService {
   private actionUrl: string;
 
-  private errorHandler: ApiService['handleError'];
-
   constructor(
     private http: HttpClient,
     public _TrakLayoutApiConfig: TrakLayoutApiConfig,
@@ -41,57 +39,49 @@ export class TrakLayoutService {
   public getChangeTypeList() {
     console.log('getChangeTypeList service headers: ' + this._headers);
     return this.http
-      .get<string>(this.actionUrl + 'getchangetypes/', this._headers)
-      .catch(this.errorHandler);
+      .get<string>(this.actionUrl + 'getchangetypes/', this._headers);
   }
 
   public getComponentList() {
     console.log('getComponentList service headers: ' + this._headers);
     return this.http
-      .get<SimpleRecord[]>(this.actionUrl + 'getcomponents/', this._headers)
-      .catch(this.errorHandler);
+      .get<SimpleRecord[]>(this.actionUrl + 'getcomponents/', this._headers);
   }
 
   public getContextList(ComponentId: string) {
     console.log('getContextList service headers: ' + ComponentId);
     return this.http
-      .get<ContextItem[]>(this.actionUrl + 'getcontexts/' + ComponentId, this._headers)
-      .catch(this.errorHandler);
+      .get<ContextItem[]>(this.actionUrl + 'getcontexts/' + ComponentId, this._headers);
   }
 
   public getChartBookList() {
     console.log('getChartBookList service headers: ' + this._headers);
     return this.http
-      .get<SimpleRecord[]>(this.actionUrl + 'getchartbooks/', this._headers)
-      .catch(this.errorHandler);
+      .get<SimpleRecord[]>(this.actionUrl + 'getchartbooks/', this._headers);
   }
 
   public getChartList(ChartBookId: string) {
     console.log('getChartList service headers: ' + ChartBookId);
     return this.http
-      .get<ChartItem[]>(this.actionUrl + 'getcharts/' + ChartBookId, this._headers)
-      .catch(this.errorHandler);
+      .get<ChartItem[]>(this.actionUrl + 'getcharts/' + ChartBookId, this._headers);
   }
 
   public getLayoutConfig() {
     console.log('getLayoutConfig service called');
     return this.http
-      .get<TrakLayoutConfig[]>(this.actionUrl + 'getlayoutconfig/', this._headers)
-      .catch(this.errorHandler);
+      .get<TrakLayoutConfig[]>(this.actionUrl + 'getlayoutconfig/', this._headers);
   }
 
   public saveLayoutFile(patchFile: TrakLayoutFile) {
     console.log('post savelayoutfile service: ' + patchFile);
     return this.http
-      .post(this.actionUrl + 'savelayoutfile/', patchFile, this._headers)
-      .catch(this.errorHandler);
+      .post(this.actionUrl + 'savelayoutfile/', patchFile, this._headers);
   }
 
   public syncLocalLayout() {
     console.log('Get syncLocalLayout service: ');
     return this.http
-      .get(this.actionUrl + 'synclocallayout/', this._headers)
-      .catch(this.errorHandler);
+      .get<any>(this.actionUrl + 'synclocallayout/', this._headers);
   }
 }
 

@@ -22,8 +22,6 @@ import { ApiConfig } from './api.config';
 export class FileListService {
   private actionUrl: string;
 
-  private errorHandler: ApiService['handleError'];
-
   constructor(
     private http: HttpClient,
     public _FileListApiConfig: FileListApiConfig,

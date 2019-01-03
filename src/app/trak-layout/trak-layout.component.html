@@ -1,6 +1,6 @@
 <div class='row'>
   <div class='column'>
-    <span style='font-size: 14px;color: #3491d4;'>Trak Layout Patch</span>
+    <span class='compcaption'>Trak Layout Patch</span>
     <div style='float: right; margin-top: 3px; margin-right: 3px;'>
       <button
         mat-raised-button
@@ -11,6 +11,8 @@
     </button>
       <button
           mat-raised-button
+          #savepatch
+          [disabled]='true'
           style='margin-left: 10px; vertical-align: top;'
           color='primary'
           title='This will create a layout patch file on your local environment. \nThe file location is determined by your CUSTOM.CORE.Util.TrakLayout.Configuration:LocalLayoutDirectory'

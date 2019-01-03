@@ -24,10 +24,6 @@ export class HistoryListService {
   private actionUrl: string;
 
   public HistoryList: HistoryList;
-  // public HostName: HistoryList['HostName'];
-
-  private errorHandler: ApiService['handleError'];
-
   constructor(
     private http: HttpClient,
     public _HistoryListApiConfig: HistoryListApiConfig,
@@ -48,7 +44,6 @@ export class HistoryListService {
     }
     console.log('getHistoryList service url: ' + this.actionUrl + remove);
     return this.http
-      .get<HistoryList[]>(this.actionUrl + remove, this._headers)
-      .catch(this.errorHandler);
+      .get<HistoryList[]>(this.actionUrl + remove, this._headers);
   }
 }

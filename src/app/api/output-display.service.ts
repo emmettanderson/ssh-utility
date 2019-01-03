@@ -22,7 +22,6 @@ import { SessionLog } from '../models/submit.model';
 export class OutputDisplayService {
   private actionUrl: string;
   SessionLog: SessionLog;
-  private errorHandler: ApiService['handleError'];
 
   constructor(
     private http: HttpClient,
@@ -40,8 +39,6 @@ export class OutputDisplayService {
   public getSessionLog(logRowId) {
     console.log('getSessionLog: ' + logRowId);
     return this.http
-      .get<SessionLog>(this.actionUrl + logRowId, this._headers)
-      .catch(this.errorHandler);
+      .get<SessionLog>(this.actionUrl + logRowId, this._headers);
   }
 }
-

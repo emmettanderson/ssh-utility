@@ -9,7 +9,8 @@ import {
   HttpRequest,
   HttpHeaders
 } from '@angular/common/http';
-import { Observable, Subject } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
+import { retry, catchError } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
 import { ApiService } from './api.service';
 import { CommandListApiConfig } from './api.config';
@@ -22,7 +23,6 @@ import { ApiConfig } from './api.config';
 export class CommandListService {
   private actionUrl: string;
   public syntaxCheck: SyntaxCheck;
-  private errorHandler: ApiService['handleError'];
 
   constructor(
     private http: HttpClient,

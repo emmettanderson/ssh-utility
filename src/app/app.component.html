@@ -15,6 +15,12 @@
           color='primary'
           (click)='submit($event)'>Submit
         </button>
+        <button
+          mat-raised-button
+          style='margin-left: 10px; vertical-align: top;'
+          color='primary'
+          (click)='clearForm()'>Clear Form
+        </button>
       </li>
     </ul>
   </div>
@@ -42,6 +48,8 @@
       </div>
       <div class='container'>
           <app-trak-layout
+            [LogRowId]='LogRowId'
+            (sendLogRowId)='updateLogRowId($event)'
             (sendDataToParent)='updateApplyTrakLayout($event)'
           ></app-trak-layout>
       </div>

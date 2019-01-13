@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2017.1.1 (Build 111_0_17521U)" ts="2019-01-02 19:28:05">
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2017.1.1 (Build 111_0_17521U)" ts="2019-01-13 18:19:55">
 <Class name="CUSTOM.CORE.REST.SSHToolUtils">
 <Super>%CSP.REST</Super>
-<TimeChanged>65015,68400.36535</TimeChanged>
+<TimeChanged>65026,56600.52383</TimeChanged>
 <TimeCreated>64999,56985</TimeCreated>
 
 <Parameter name="HandleCorsRequest">
@@ -427,7 +427,7 @@ Need to create credentials on Local AG production for SSHLogin and ADLogin</Desc
 					
 					#; Replace [Healthshare]/ with defined HSInstallPath
 					Set zToFile = $Replace(ToFile, "[Healthshare]/", TargetObject.HSInstallPath)
-					Set zToFile = $Replace(ToFile, "[LayoutDirectory]/", TargetObject.DefaultHomeDirectory)
+					Set zToFile = $Replace(zToFile, "[LayoutDirectory]/", TargetObject.DefaultHomeDirectory)
 					Set zToFile = $Replace(zToFile, "//","/")  // In case user entered "/" before [Healthshare]
 					
 					#; Double-check
@@ -442,9 +442,9 @@ Need to create credentials on Local AG production for SSHLogin and ADLogin</Desc
 					}
 					
 					Set Status = sftpObject.Put(FromFile,zToFile)
-					
+
 					If $$$ISERR(Status) {
-						Set LogString = "Error putting file: "_FromFile_" to "_zToFile_
+						Set LogString = "Error putting file: "_FromFile_" to "_ToFile_" ***** "_zToFile_
 							" >>>>>> "_$$GetErrorText^%apiOBJ(Status)
 						Do ..LogEntry(.LogObject, LogString)
 					} Else {
@@ -467,7 +467,7 @@ Need to create credentials on Local AG production for SSHLogin and ADLogin</Desc
 			
 			#; Check for default directories in commands:
 			Set Command = $Replace(Command, "[Healthshare]/", TargetObject.HSInstallPath)
-			Set Command = $Replace(Command, "[LayoutDirectory]/", TargetObject.DefaultHomeDirectory)
+			Set Command = $Replace(Command, "[LayoutsDirectory]/", TargetObject.DefaultHomeDirectory)
 			Set Command = $Replace(Command, "//","/")  // In case user entered "/" before [Healthshare]
 
 			#; Strip alpha character from AG04 hosts
@@ -771,7 +771,7 @@ Destination Files sent to environments</Description>
 
 <Class name="CUSTOM.CORE.Util.SSHTool.TargetConfig">
 <Super>%Persistent</Super>
-<TimeChanged>65013,65150.605308</TimeChanged>
+<TimeChanged>65020,73794.94909</TimeChanged>
 <TimeCreated>64990,58256.843916</TimeCreated>
 
 <Property name="HostName">
@@ -839,12 +839,13 @@ Northwell-specific default values</Description>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
 	Set Status = $$$OK
-	Set TargetList = $ListBuild("hshiedev01","hshieidev01","hshieqa01","hsagstage01","hsagstage04a","hsagstage04b","hsagprod01","hsagprod04a","hsagprod04b","hsagprod04c","hsagprod04d","hsregstage01","hsregprod01","hsedgestage01","hsedgeprod01")
-	Set DescList = $ListBuild("HIE DEV Server","HIE IDEV Server","HIE QA Server","Stage01 Access Gateway","Stage04-a Access Gateway","Stage04-b Access Gateway","Prod01 Access Gateway","Prod04-a Access Gateway","Prod04-b Access Gateway","Prod04-c Access Gateway","Prod04-d Access Gateway ","Stage Registry","Prod Registry","Stage Edge","Prod Edge")
-	Set HSInstallPathList = $ListBuild("dev","idev","qa","stage","stage","stage","prd","prd","prd","prd","prd")
+	Set TargetList = $ListBuild("hshiedev01","hshieidev01","hshieqa01","hsagstage01","hsagstage04a","hsagstage04b","hsagprod01","hsagprod01-prd","hsagprod04a","hsagprod04b","hsagprod04c","hsagprod04d","hsregstage01","hsregprod01","hsedgestage01","hsedgeprod01")
+	Set DescList = $ListBuild("HIE DEV Server","HIE IDEV Server","HIE QA Server","Stage01 Access Gateway","Stage04-a Access Gateway","Stage04-b Access Gateway","Prod01 Access Gateway","Prod01 Access Gateway (mirror)","Prod04-a Access Gateway","Prod04-b Access Gateway","Prod04-c Access Gateway","Prod04-d Access Gateway ","Stage Registry","Prod Registry","Stage Edge","Prod Edge")
+	Set HSInstallPathList = $ListBuild("dev","idev","qa","stage","stage","stage","prd","prd","prd","prd","prd","prd")
 	For Index = 1:1:$ListLength(TargetList) {
 		Set Target = $ListGet(TargetList, Index)
 		Set TargetUrl = Target_".nshs.edu"
+		If Target = "hsagprod01-prd" Set Target = "hsagprod01"
 		Set Desc = $ListGet(DescList, Index)
 		Set HSInstallPath = "/app01/"_$ListGet(HSInstallPathList, Index)_"/hie/healthshare/"
 		Set Object = ..HostUrlOpen(TargetUrl)
@@ -903,7 +904,7 @@ Northwell-specific default values</Description>
 
 <Class name="CUSTOM.CORE.Util.SSHTool.TargetGroupConfig">
 <Super>%Persistent</Super>
-<TimeChanged>65013,54797.935515</TimeChanged>
+<TimeChanged>65020,46790.69164</TimeChanged>
 <TimeCreated>64990,59645.014611</TimeCreated>
 
 <Property name="GroupName">
@@ -929,8 +930,8 @@ Default Populate for Northwell Health Implementation - Must Populate ..TargetCon
 	Set Status = $$$OK
 	&sql(TRUNCATE Table CUSTOM_CORE_Util_SSHTool.TargetGroupConfig)
 	
-	Set GroupNameList = $ListBuild("Development","IDEV","QA","Stage","Non-Prod","Production")
-	Set TargetLists = $ListBuild($ListBuild("HSHIEDEV01","HSHIEIDEV01"),$ListBuild("HSHIEIDEV01"),$ListBuild("HSHIEQA01"),$ListBuild("HSAGSTAGE01","HSAGSTAGE04a","HSAGSTAGE04b"),$ListBuild("HSHIEDEV01","HSHIEIDEV01","HSHIEQA01","HSAGSTAGE01","HSAGSTAGE04a","HSAGSTAGE04b"),$ListBuild("HSAGPROD01","HSAGPROD04a","HSAGPROD04b","HSAGPROD04c","HSAGPROD04d"))
+	Set GroupNameList = $ListBuild("Development","QA","Stage","Non-Prod","Production","IDEV","AG-Prod01","AG-Prod01-prd")
+	Set TargetLists = $ListBuild($ListBuild("HSHIEDEV01","HSHIEIDEV01"),$ListBuild("HSHIEQA01"),$ListBuild("HSAGSTAGE01","HSAGSTAGE04a","HSAGSTAGE04b"),$ListBuild("HSHIEDEV01","HSHIEIDEV01","HSHIEQA01","HSAGSTAGE01","HSAGSTAGE04a","HSAGSTAGE04b"),$ListBuild("HSAGPROD01","HSAGPROD04a","HSAGPROD04b","HSAGPROD04c","HSAGPROD04d"),$ListBuild("HSHIEIDEV01"),$ListBuild("HSAGPROD01"),$ListBuild("HSAGPROD01-PRD"))
 	For Index = 1:1:$ListLength(GroupNameList) {
 		Set GroupName = $ListGet(GroupNameList, Index)_" Environment(s)"
 		Set TargetList = $ListGet(TargetLists, Index)
@@ -2581,7 +2582,7 @@ Prepare the Trak Component layout changes from file and merge</Description>
 </Class>
 
 
-<Project name="HieCOMMONLIBSSHToolsV1" LastModified="2018-12-30 21:46:24.481913">
+<Project name="HieCOMMONLIBSSHToolsV1" LastModified="2019-01-10 21:42:36.794041">
   <Items>
     <ProjectItem name="CUSTOM.CORE.REST.SSHToolUtils" type="CLS"></ProjectItem>
     <ProjectItem name="CUSTOM.CORE.Util.SSHTool.GeneralConfig" type="CLS"></ProjectItem>

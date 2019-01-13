@@ -128,7 +128,7 @@ td.mat-cell span {
   padding-top: 2px;
   height: auto !important;
   font-size: 1em;
-  height: 60px !important;
+  /*height: 60px !important;*/
 }
 
 .mat-list-item span i {

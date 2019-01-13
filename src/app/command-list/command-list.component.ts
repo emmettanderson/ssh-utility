@@ -56,11 +56,13 @@ export class CommandListComponent implements OnInit, OnChanges {
         this.syntaxCheck = resp;
         if (typeof this.syntaxCheck.summary !== 'undefined') {
           if (this.syntaxCheck.summary === '1') {
-            this.syntaxerror.nativeElement.style.display = 'none';
-            this.syntaxerror.nativeElement.innerHTML = '';
+            this.syntaxerror.nativeElement.style.display = '';
+            this.syntaxerror.nativeElement.style.color = 'forestgreen';
+            this.syntaxerror.nativeElement.innerHTML = 'Syntax check OK';
             this.addItem(newitem, 0);
           } else {
             this.syntaxerror.nativeElement.innerHTML = this.syntaxCheck.summary;
+            this.syntaxerror.nativeElement.style.color = 'red';
             this.syntaxerror.nativeElement.style.display = '';
           }
         }

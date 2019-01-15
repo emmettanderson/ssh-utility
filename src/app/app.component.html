@@ -4,10 +4,12 @@
   <div class='stickyheaderdiv'>
     <ul style='list-style-type: none;'>
       <li>
-        <mat-form-field class='example-full-width'>
-          <input matInput dense
-          placeholder='Description'
-          #description>
+        <mat-form-field class='example-full-width' style='width: 70% !important'>
+          <input
+            matInput
+            dense
+            placeholder='Description'
+            #description>
         </mat-form-field>
         <button
           mat-raised-button
@@ -21,6 +23,21 @@
           color='primary'
           (click)='clearForm()'>Clear Form
         </button>
+        <button
+          mat-raised-button
+          [matMenuTriggerFor]='deployselect'
+          title='This will open deploy page in new tab'
+          style='margin-left: 10px; vertical-align: top;'
+          color='primary'>Deploy Page
+        </button>
+        <mat-menu #deployselect>
+          <button mat-button color='primary'
+                  *ngFor='let target of targets'
+                  [value]='target'
+                  (click)='onClickDeployTarget(target)'>
+                  {{target.HostName}}
+          </button>
+        </mat-menu>
       </li>
     </ul>
   </div>

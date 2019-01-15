@@ -68,6 +68,7 @@ export class TrakLayoutComponent implements OnInit, OnChanges {
     this.selectedChartBook = '';
     this.selectedComponent = '';
   }
+
   ngOnChanges(changes: {[propKey: string]: SimpleChange}) {
     /*
     if (typeof changes['LogRowId'] !== 'undefined'

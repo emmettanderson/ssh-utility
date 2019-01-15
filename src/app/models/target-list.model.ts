@@ -8,4 +8,5 @@ export class TargetList implements TargetListInt {
   id: number;
   HostName: string;
   HostUrl: string;
+  DeployPath: string;
 }

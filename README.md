@@ -3,6 +3,8 @@ Tool for executing cache terminal commands via SSH and transferring files via SF
 
 Added custom TrakLayoutPatch save/load feature - This allows users to apply trak layout changes for specific component, context, chart, chart item, transform, icon definition, etc. rather than applying layout changes instance-wide.
 
+Added Deploy Page menu button: this simply lists target environments with class property DeployPage valued. Upon selecting the environment, the configured deployment web page will open in a new tab.
+
 *** Apologies - Currently designed for Northwell Health site implementation.
 ***             Ongoing development to make site-agnostic. 
 

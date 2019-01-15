@@ -14,7 +14,8 @@ import { MatTableModule,
          MatDialogModule,
          MatAutocompleteModule,
          MatProgressSpinnerModule,
-         MatButtonModule} from '@angular/material';
+         MatButtonModule,
+         MatMenuModule} from '@angular/material';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { NgSelectModule } from '@ng-select/ng-select';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'; // <-- NgModel lives here
@@ -55,6 +56,7 @@ import { TrakLayoutComponent } from './trak-layout/trak-layout.component';
     MatSelectModule,
     MatPaginatorModule,
     MatFormFieldModule,
+    MatMenuModule,
     MatInputModule,
     MatCheckboxModule,
     MatIconModule,
@@ -74,6 +76,7 @@ import { TrakLayoutComponent } from './trak-layout/trak-layout.component';
     MatFormFieldModule,
     MatIconModule,
     MatCheckboxModule,
+    MatMenuModule,
     OutputDisplayModalComponent
   ],
   entryComponents: [OutputDisplayModalComponent],

@@ -1,11 +1,22 @@
 import { Component, ChangeDetectorRef, Input, OnInit, ViewChild, ElementRef, Inject } from '@angular/core';
-import { HistoryList } from './models/history-list';
+
+/*
 import { OutputDisplayComponent } from './output-display/output-display.component';
+import { FileListComponent } from './file-list/file-list.component';
+import { CommandListComponent } from './command-list/command-list.component';
+import { TrakLayoutComponent } from './trak-layout/trak-layout.component';
+*/
+
+import { HistoryList } from './models/history-list';
 import { FileArray } from './models/file-list.model';
 import { SessionLog } from './models/submit.model';
 import { SubmitService } from './api/submit.service';
 import { SubmitList } from './models/submit.model';
+import { TargetList } from './models/target-list.model';
+
+import { TargetListService } from './api/target-list.service';
 import { Observable, Subject } from 'rxjs';
+import { MatSelect } from '@angular/material';
 
 // import { MatButton } from '@angular/material';
 
@@ -17,7 +28,7 @@ import { Observable, Subject } from 'rxjs';
 export class AppComponent implements OnInit {
   title = 'SSH Tool';
   response: any;
-  public LogRowId: string;
+  LogRowId: string;
   SessionLog: SessionLog;
   SessionLogText: string;
   SessionLogCounter: number;
@@ -28,18 +39,42 @@ export class AppComponent implements OnInit {
   DestFileList: string;
   Submitted: any;
   Interval: any;
+  targets: any = [];
+  HostName: string;
+  /*
+  trakLayoutComponent: TrakLayoutComponent;
+  fileListComponent: FileListComponent;
+  commandListComponent: CommandListComponent;
   outputDisplayComponent: OutputDisplayComponent;
+  */
+
 
   @Input() SubmitList: SubmitList;
   @ViewChild('description') description: ElementRef;
+  @ViewChild('deployselect') deployselect: MatSelect;
 
   constructor(
-    private _submitService: SubmitService
+    private _submitService: SubmitService,
+    private _targetListService: TargetListService
     // private _changeDetectorRef: ChangeDetectorRef
   ) { }
 
   ngOnInit() {
     this.SubmitList = new SubmitList;
+    console.log('getDeployTargets OnInit');
+    this.targets = [];
+    this._targetListService.getTargetList('all').subscribe(Targets => {
+      this.targets = Targets;
+    });
+  }
+
+  onClickDeployTarget(target) {
+    console.log('OnChangeDeployTargetHandler: ' + target.HostUrl + target.DeployPath);
+    if (target.DeployPath === '') {
+      alert(target.HostName + ': No Deploy Path Configured.');
+      return false;
+    }
+    window.open('https://' + target.HostUrl + target.DeployPath);
   }
 
   eventFromChild(historylist: HistoryList[]) {
@@ -111,6 +146,22 @@ export class AppComponent implements OnInit {
   }
   clearForm() {
     window.location.reload();
+    /*
+    this.SubmitList = new SubmitList;
+    this.SessionLog = new SessionLog;
+    this.trakLayoutComponent.ngOnInit();
+    this.fileListComponent.ngOnInit();
+    this.commandListComponent.ngOnInit();
+    this.outputDisplayComponent.ngOnInit();
+    this.GroupName = '';
+    this.CommandList = '';
+    this.SrcFileList = '';
+    this.DestFileList = '';
+    this.SessionLogText = '';
+    this.LogRowId = '';
+    this.Submitted = '';
+    this.description.nativeElement.value = '';
+    */
   }
 
   submit(e) {

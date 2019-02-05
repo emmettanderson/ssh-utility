@@ -96,7 +96,7 @@ tr.mat-row {
 }
 td.mat-cell span {
   display: block;
-  max-height: 30px !important;
+  /*max-height: 30px !important;*/
 }
 .mat-cell {
   max-width: 200px;

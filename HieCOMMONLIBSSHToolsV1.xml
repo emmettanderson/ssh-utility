@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2017.1.1 (Build 111_0_17521U)" ts="2019-01-13 18:19:55">
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2017.1.1 (Build 111_0_17521U)" ts="2019-01-18 13:23:05">
 <Class name="CUSTOM.CORE.REST.SSHToolUtils">
 <Super>%CSP.REST</Super>
-<TimeChanged>65026,56600.52383</TimeChanged>
+<TimeChanged>65031,48092.748015</TimeChanged>
 <TimeCreated>64999,56985</TimeCreated>
 
 <Parameter name="HandleCorsRequest">
@@ -171,25 +171,51 @@ This UrlMap maps http requests to the classmethod to which it should be dispatch
 <Implementation><![CDATA[
 	#Dim TargetObject As CUSTOM.CORE.Util.SSHTool.TargetConfig
 	
-	If GroupName="" Quit Status
+	If GroupName = "" Quit $$$OK
 	
 	Set Status = $$$OK
 	
 	Set tJsonStream = ##Class(%Stream.TmpCharacter).%New()
 	Set ProxyObject = ##Class(%ZEN.proxyObject).%New()
 	
-	Set GroupObject = ##Class(CUSTOM.CORE.Util.SSHTool.TargetGroupConfig).GroupNameOpen(GroupName)
-	If '$IsObject(GroupObject) Quit Status
-	
-	For Index = 1:1:GroupObject.TargetList.Count() {
-		Set TargetObject = GroupObject.TargetList.GetAt(Index)
-		If '$IsObject(TargetObject) Continue
+	If GroupName '= "all" {
+		Set GroupObject = ##Class(CUSTOM.CORE.Util.SSHTool.TargetGroupConfig).GroupNameOpen(GroupName)
+		If '$IsObject(GroupObject) Quit Status
 		
-		Set ProxyObject.id = TargetObject.%Id()
-		Set ProxyObject.HostName = TargetObject.HostName
-		Set ProxyObject.HostUrl = TargetObject.HostUrl
+		For Index = 1:1:GroupObject.TargetList.Count() {
+			Set TargetObject = GroupObject.TargetList.GetAt(Index)
+			If '$IsObject(TargetObject) Continue
+			
+			Set ProxyObject.id = TargetObject.%Id()
+			Set ProxyObject.HostName = TargetObject.HostName
+			Set ProxyObject.HostUrl = TargetObject.HostUrl
+			Set ProxyObject.DeployPath = TargetObject.DeployPath
+			
+			Set Status = ##class(%ZEN.Auxiliary.jsonProvider).%WriteJSONStreamFromObject(tJsonStream,ProxyObject,,,0,"") 
+		}
+	} Else {
+		&SQL(
+			DECLARE GetTargetList CURSOR FOR
+			SELECT ID, HostName, HostUrl, DeployPath 
+			FROM CUSTOM_CORE_Util_SSHTool.TargetConfig 
+		)
 		
-		Set Status = ##class(%ZEN.Auxiliary.jsonProvider).%WriteJSONStreamFromObject(tJsonStream,ProxyObject,,,0,"") 
+		&SQL(OPEN GetTargetList)
+		
+		Set tJsonStream = ##Class(%Stream.TmpCharacter).%New()
+		Set ProxyObject = ##Class(%ZEN.proxyObject).%New()
+		
+		For {
+			&SQL(FETCH GetTargetList INTO :RowId, :HostName, :HostUrl, :DeployPath)
+			If SQLCODE Quit
+			
+			Set ProxyObject.id = RowId
+			Set ProxyObject.HostName = HostName
+			Set ProxyObject.HostUrl = HostUrl
+			Set ProxyObject.DeployPath = DeployPath
+			Set Status = ##class(%ZEN.Auxiliary.jsonProvider).%WriteJSONStreamFromObject(tJsonStream,ProxyObject,,,0,"") 
+		}
+		&SQL(CLOSE GetTargetList)
 	}
 
 	If $IsObject(tJsonStream) {
@@ -419,14 +445,14 @@ Need to create credentials on Local AG production for SSHLogin and ADLogin</Desc
 					Set zToFile = ToFile
 					
 					#; Northwell-specific for multiple AGs
-					If $Extract(Target,1,4) = "HSAG" {
+					If $Extract($ZCVT(Target,"U"),1,4) = "HSAG" {
 						Set zToFile = $Case(Target["04",
 											1:$Replace(ToFile,"access01","access04"),
 											:$Replace(ToFile,"access04","access01"))
 					}
 					
 					#; Replace [Healthshare]/ with defined HSInstallPath
-					Set zToFile = $Replace(ToFile, "[Healthshare]/", TargetObject.HSInstallPath)
+					Set zToFile = $Replace(zToFile, "[Healthshare]/", TargetObject.HSInstallPath)
 					Set zToFile = $Replace(zToFile, "[LayoutDirectory]/", TargetObject.DefaultHomeDirectory)
 					Set zToFile = $Replace(zToFile, "//","/")  // In case user entered "/" before [Healthshare]
 					
@@ -771,7 +797,7 @@ Destination Files sent to environments</Description>
 
 <Class name="CUSTOM.CORE.Util.SSHTool.TargetConfig">
 <Super>%Persistent</Super>
-<TimeChanged>65020,73794.94909</TimeChanged>
+<TimeChanged>65029,70832.567705</TimeChanged>
 <TimeCreated>64990,58256.843916</TimeCreated>
 
 <Property name="HostName">
@@ -822,6 +848,14 @@ If property value = null:
 <Parameter name="MAXLEN" value="32000"/>
 </Property>
 
+<Property name="DeployPath">
+<Description>
+URL to web deployment page: 
+example: /csp/healthshare/access04/Workbench.SourceControl.Deploy.Input.cls</Description>
+<Type>%String</Type>
+<Parameter name="MAXLEN" value="32000"/>
+</Property>
+
 <Index name="HostUrl">
 <Properties>HostUrl</Properties>
 <Unique>1</Unique>
@@ -841,11 +875,21 @@ Northwell-specific default values</Description>
 	Set Status = $$$OK
 	Set TargetList = $ListBuild("hshiedev01","hshieidev01","hshieqa01","hsagstage01","hsagstage04a","hsagstage04b","hsagprod01","hsagprod01-prd","hsagprod04a","hsagprod04b","hsagprod04c","hsagprod04d","hsregstage01","hsregprod01","hsedgestage01","hsedgeprod01")
 	Set DescList = $ListBuild("HIE DEV Server","HIE IDEV Server","HIE QA Server","Stage01 Access Gateway","Stage04-a Access Gateway","Stage04-b Access Gateway","Prod01 Access Gateway","Prod01 Access Gateway (mirror)","Prod04-a Access Gateway","Prod04-b Access Gateway","Prod04-c Access Gateway","Prod04-d Access Gateway ","Stage Registry","Prod Registry","Stage Edge","Prod Edge")
-	Set HSInstallPathList = $ListBuild("dev","idev","qa","stage","stage","stage","prd","prd","prd","prd","prd","prd")
+	Set HSInstallPathList = $ListBuild("dev","idev","qa","stage","stage","stage","prd","prd","prd","prd","prd","prd","stage","prd","stage","prd")
+	
 	For Index = 1:1:$ListLength(TargetList) {
 		Set Target = $ListGet(TargetList, Index)
 		Set TargetUrl = Target_".nshs.edu"
-		If Target = "hsagprod01-prd" Set Target = "hsagprod01"
+		// If Target = "hsagprod01-prd" Set Target = "hsagprod01"
+		If Target [ "stage" || (Target [ "prod") {
+			If Target [ "01" {
+				Set DeployPath = "/csp/healthshare/access01/Workbench.SourceControl.Deploy.Input.cls"
+			} Else {
+				Set DeployPath = ""
+			}
+		} Else {
+			Set DeployPath = "/csp/healthshare/access04/Workbench.SourceControl.Deploy.Input.cls"
+		}
 		Set Desc = $ListGet(DescList, Index)
 		Set HSInstallPath = "/app01/"_$ListGet(HSInstallPathList, Index)_"/hie/healthshare/"
 		Set Object = ..HostUrlOpen(TargetUrl)
@@ -857,6 +901,7 @@ Northwell-specific default values</Description>
 		Set Object.Description = Desc
 		Set Object.HSInstallPath = HSInstallPath
 		Set Object.DefaultHomeDirectory = "/tmp/traklayouts/"
+		Set Object.DeployPath = DeployPath
 		
 		Set Status = Object.%Save()
 		If $$$ISERR(Status) Quit
@@ -896,6 +941,9 @@ Northwell-specific default values</Description>
 </Value>
 <Value name="8">
 <Value>DefaultHomeDirectory</Value>
+</Value>
+<Value name="9">
+<Value>DeployPath</Value>
 </Value>
 </Data>
 </Storage>

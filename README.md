@@ -11,11 +11,13 @@ Added Deploy Page menu button: this simply lists target environments with class 
 ## Installation
 1.) Import HieCOMMONLIBSSHToolsV1.xml COS classes into local HS environment
 
-2.) Create web application:
+2.) Create web applications:
   > Name: /csp/rest/sshtools
-  
   > Dispatch Class: CUSTOM.CORE.REST.SSHToolUtils
-
+  
+  > Name: /csp/angular/sshutils
+  > CSP Files Physical Path: [app path]/dist/index.html
+  
 3.) Create local ensemble credentials: 
   > Credential: ADLogin (HS access)
   
@@ -46,7 +48,10 @@ Added Deploy Page menu button: this simply lists target environments with class 
   
   > };
 
-7.) For Trak Layout Patch Feature to work:
+7.) Build distribution
+	> ng build --base-href ./
+	
+8.) For Trak Layout Patch Feature to work:
   > CUSTOM.CORE.Util.TrakLayout.Utility must be deployed to all environments where Trak Layout patches might be applied. This is to facilitate the loading/applying of the layout patch file.   
 
 

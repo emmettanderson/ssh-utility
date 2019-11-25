@@ -39,6 +39,9 @@ export class CommandListService {
 
   public checkCodeSyntax(command: string) {
     console.log('CommandList Code Check Service post: cmd: ' + command);
-    return this.http.get<SyntaxCheck>(this.actionUrl + btoa(command), this._headers);
+    const encCommand = btoa(command);
+    const uriCommand = encodeURIComponent(encCommand);
+    console.log('CommandList Code Check Service post: uri encode base64 cmd: ' + uriCommand);
+    return this.http.get<SyntaxCheck>(this.actionUrl + uriCommand, this._headers);
   }
 }

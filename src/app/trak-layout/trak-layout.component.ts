@@ -192,10 +192,10 @@ export class TrakLayoutComponent implements OnInit, OnChanges {
     // LayoutFile only applied if the file/command is submitted
     const applyitem: any = [];
     applyitem.srcFile = this.LayoutConfig['LocalLayoutDirectory'] + this.filename.nativeElement.value;
-    applyitem.destFile = '[LayoutDirectory]/' + this.filename.nativeElement.value;
+    applyitem.destFile = '/tmp/' + this.filename.nativeElement.value;
     applyitem.command = 'Do ##Class(' + this.LayoutConfig['LoadLayoutClassMethod'].split('|')[0];
     applyitem.command +=  ').' + this.LayoutConfig['LoadLayoutClassMethod'].split('|')[1];
-    applyitem.command += '("' + applyitem.destFile + '",1)';
+    applyitem.command += '("' + applyitem.destFile + '",1,0,1)';
 
     console.log('onClickApplyPatchFile: ' + applyitem);
     this.sendDataToParent.emit(applyitem);

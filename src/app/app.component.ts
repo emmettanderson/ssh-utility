@@ -50,8 +50,8 @@ export class AppComponent implements OnInit {
 
 
   @Input() SubmitList: SubmitList;
-  @ViewChild('description') description: ElementRef;
-  @ViewChild('deployselect') deployselect: MatSelect;
+  @ViewChild('description', {static: false}) description: ElementRef;
+  @ViewChild('deployselect', {static: false}) deployselect: MatSelect;
 
   constructor(
     private _submitService: SubmitService,

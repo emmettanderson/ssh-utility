@@ -22,9 +22,9 @@ export class FileListComponent implements OnInit, OnChanges {
   @Input() destFileList: string;
   @Output() sendDataToParent = new EventEmitter<any>();
 
-  @ViewChild('newSrcItem') srcInput: ElementRef;
-  @ViewChild('newDestItem') destInput: ElementRef;
-  @ViewChild('fileinputform') fileInputForm: ElementRef;
+  @ViewChild('newSrcItem', {static: false}) srcInput: ElementRef;
+  @ViewChild('newDestItem', {static: false}) destInput: ElementRef;
+  @ViewChild('fileinputform', {static: false}) fileInputForm: ElementRef;
 
   constructor(public _fileListService: FileListService) {}
 

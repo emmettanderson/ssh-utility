@@ -38,8 +38,8 @@ export class HistoryListComponent implements OnInit, AfterViewInit, OnChanges {
   public displayedColumns: string[] = ['logDate', 'description', 'commandList', 'fileList', 'targetGroup', 'removeRecord'];
   dataSource: MatTableDataSource<HistoryList> = new MatTableDataSource();
 
-  @ViewChild(MatPaginator) paginator: MatPaginator;
-  @ViewChild(MatSort) sort: MatSort;
+  @ViewChild(MatPaginator, {static: false}) paginator: MatPaginator;
+  @ViewChild(MatSort, {static: false}) sort: MatSort;
   @Output() sendDataToParent = new EventEmitter<HistoryList[]>();
   @Input() submitted: any;
 

@@ -28,8 +28,8 @@ export class OutputDisplayComponent implements OnInit, OnChanges {
   @Input('sessionLog') sessionLog;
 
   @Output() sendDataToParent = new EventEmitter<any>();
-  @ViewChild('sessionlog') sessionlog: ElementRef;
-  @ViewChild('sessionlogdiv') sessionlogdiv: ElementRef;
+  @ViewChild('sessionlog', {static: false}) sessionlog: ElementRef;
+  @ViewChild('sessionlogdiv', {static: false}) sessionlogdiv: ElementRef;
 
   testEmitter = new BehaviorSubject<SessionLogInt>(this.SessionLog);
   public interval: any = '';

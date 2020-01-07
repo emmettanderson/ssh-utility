@@ -18,8 +18,8 @@ export class CommandListComponent implements OnInit, OnChanges {
   @Input() CommandList: string;
   @Input() syntaxCheck: SyntaxCheck;
   @Output() sendDataToParent = new EventEmitter<any[]>();
-  @ViewChild('newitem') input: ElementRef;
-  @ViewChild('syntaxerror') syntaxerror: ElementRef;
+  @ViewChild('newitem', {static: false}) input: ElementRef;
+  @ViewChild('syntaxerror', {static: false}) syntaxerror: ElementRef;
 
   constructor(private _commandListService: CommandListService) { }
 

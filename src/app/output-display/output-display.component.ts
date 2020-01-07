@@ -28,9 +28,9 @@ export class OutputDisplayComponent implements OnInit, OnChanges {
   @Input() interval: any;
   @Output() sendDataToParent = new EventEmitter<any>();
 
-  @ViewChild('sessionlog') sessionlog: ElementRef;
-  @ViewChild('sessionlogdiv') sessionlogdiv: ElementRef;
-  @ViewChild('spinner') spinner: ElementRef;
+  @ViewChild('sessionlog', {static: false}) sessionlog: ElementRef;
+  @ViewChild('sessionlogdiv', {static: false}) sessionlogdiv: ElementRef;
+  @ViewChild('spinner', {static: false}) spinner: ElementRef;
 
   public modalDialogRef: MatDialogRef<OutputDisplayModalComponent>;
   public showModal: boolean;
@@ -133,8 +133,8 @@ export class OutputDisplayComponent implements OnInit, OnChanges {
 export class OutputDisplayModalComponent implements OnChanges {
 
   @Input('SessionLogText') SessionLogText: any;
-  @ViewChild('spinner') spinner: ElementRef;
-  @ViewChild('sessionlogmodal') sessionLogModal: ElementRef;
+  @ViewChild('spinner', {static: false}) spinner: ElementRef;
+  @ViewChild('sessionlogmodal', {static: false}) sessionLogModal: ElementRef;
 
   constructor(
     public modalDialogRef: MatDialogRef<OutputDisplayModalComponent>,

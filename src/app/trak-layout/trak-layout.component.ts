@@ -29,16 +29,16 @@ export class TrakLayoutComponent implements OnInit, OnChanges {
   @Input() Interval: any;
   @Output() sendDataToParent = new EventEmitter<any[]>();
   @Output() sendLogRowId = new EventEmitter<any>();
-  @ViewChild('filename') filename: ElementRef;
-  @ViewChild('changetypesel') changetypesel: ElementRef;
-  @ViewChild('componentdiv') componentdiv: ElementRef;
-  @ViewChild('component') component: ElementRef;
-  @ViewChild('chartbookdiv') chartbookdiv: ElementRef;
-  @ViewChild('chartbook') chartbook: ElementRef;
-  @ViewChild('context') context: ElementRef;
-  @ViewChild('chart') chart: ElementRef;
-  @ViewChild('applybutton') applybutton: any;
-  @ViewChild('savepatch') savepatch: any;
+  @ViewChild('filename', {static: false}) filename: ElementRef;
+  @ViewChild('changetypesel', {static: false}) changetypesel: ElementRef;
+  @ViewChild('componentdiv', {static: false}) componentdiv: ElementRef;
+  @ViewChild('component', {static: false}) component: ElementRef;
+  @ViewChild('chartbookdiv', {static: false}) chartbookdiv: ElementRef;
+  @ViewChild('chartbook', {static: false}) chartbook: ElementRef;
+  @ViewChild('context', {static: false}) context: ElementRef;
+  @ViewChild('chart', {static: false}) chart: ElementRef;
+  @ViewChild('applybutton', {static: false}) applybutton: any;
+  @ViewChild('savepatch', {static: false}) savepatch: any;
 
   FileName: string;
   selectedChangeType: any;

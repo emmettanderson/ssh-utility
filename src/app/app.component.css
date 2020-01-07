@@ -1,0 +1,198 @@
+h1 {
+  font-size: 1.5em;
+  font-weight: bold;
+  text-align: center;
+  color: #3491d4;
+}
+h3 {
+  color: #3491d4;
+  text-align: center;
+}
+.spinner {
+  display: none !important;
+  height: 24px !important;
+  width: 24px !important;
+}
+.compcaption {
+  font-size: 14px;
+  color: #3491d4;
+}
+.mat-menu-content {
+  display: grid;
+}
+.stickyheader {
+  position: fixed;
+  background: white;
+  border-bottom: 1px solid lightblue;
+  top: 0;
+  left: 0;
+  height: 50px;
+  width: 100%;
+  z-index: 9999;
+  white-space: nowrap;
+}
+.stickyheader h1 {
+  text-align: left;
+  font-size: 1em;
+  width: 100px;
+  position: relative;
+  top: 16px;
+  margin-left: 10px;
+}
+.stickyheaderdiv {
+  position: relative;
+  top: -27px;
+  left: -150px;
+  text-align: left;
+  font-size: 1em;
+  float: right;
+  margin-left: 10px;
+  margin-right: 30px;
+  margin-top: 6px;
+}
+.btn {
+  margin-left: 10px;
+}
+.rowBtn {
+  float: right;
+}
+.container {
+  overflow: hidden;
+  width: 99%;
+  min-height: 5em;
+  margin:0;
+  border: 1px solid lightblue;
+  border-radius: 10px;
+  padding: 5px;
+  margin: 10px;
+  background-color: white;
+  /*display: inline-block;*/
+}
+
+.column {
+  width: 100%;
+}
+
+.compleftnav {
+  width: 20%;
+  float: left;
+  padding-bottom: 500em;
+  margin-bottom: -500em;
+}
+.listcontainer {
+  overflow-x: scroll;
+  display: block;
+  /*
+  width: 100%;
+  float: left;
+  padding-bottom: 500em;
+  margin-bottom: -500em;
+  margin-right: -1px;
+  white-space: pre-wrap;
+  */
+}
+.row {
+  margin: 0;
+}
+.compleft {
+  width: 40%;
+  float: left;
+  padding-bottom: 500em;
+  margin-bottom: -500em;
+}
+#filelistdiv {
+  width: 100% !important;
+}
+#filelistdiv div {
+  display: inline-block !important;
+  width: 100% !important;
+}
+.codestyle {
+  font-family: 'Courier New', Courier, monospace;
+  font-weight: 600;
+  white-space: pre-line;
+  display: block;
+  word-break: break-all;
+  text-overflow: ellipsis;
+  font-size: 12px;
+}
+
+.compright {
+  width: 60%;
+  float: left;
+  padding-bottom: 500em;
+  margin-bottom: -500em;
+  margin-right: -1px; /* Thank you IE */
+}
+
+@media only screen and (max-width: 1200px)
+{
+    .compleft, .compright
+    {
+        display: block;
+        float: none;
+        width: 100%;
+        padding: 5px 0;
+    }
+}
+@media (min-width: 1200px) {
+  .container {
+    max-width: 100% !important;
+  }
+}
+.complist {
+  margin: 0 0 2em 0;
+  list-style-type: none;
+  padding: 0;
+  width: auto;
+}
+
+.complist li {
+  cursor: pointer;
+  display: inline-block;
+  width: 98%;
+  /*
+  position: relative;
+  left: 0;
+  */
+  background-color: #EEE;
+  margin: .2em;
+  padding: .2em;
+  /*height: 1.3em;*/
+  border-radius: 4px;
+}
+.complist li.selected:hover {
+  background-color: #BBD8DC !important;
+  color: white;
+}
+.complist li span {
+  padding-right: .3em;
+  padding-left: .3em;
+  display: inline-block;
+}
+.complist li:hover {
+  color: #607D8B;
+  background-color: #DDD;
+  left: .1em;
+}
+input {
+  width:90%;
+}
+.complist .text {
+  position: relative;
+  /*top: -3px;*/
+}
+.complist .badge {
+  display: inline-block;
+  font-size: small;
+  color: white;
+  padding: 0.8em 0.7em 0 0.7em;
+  background-color: #607D8B;
+  line-height: 1em;
+  position: relative;
+  left: -1px;
+  top: -4px;
+  height: 1.8em;
+  margin-right: .8em;
+  border-radius: 4px 0 0 4px;
+}

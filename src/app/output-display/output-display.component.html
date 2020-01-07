@@ -1,0 +1,31 @@
+<div style='width: 100%;display: inline-block;'>
+    <span class='compcaption'>Session Log
+      <div #spinner style='display: none;'>
+        <mat-progress-spinner
+          diameter='20'
+          color='primary'
+          mode='indeterminate'>
+        </mat-progress-spinner>
+      </div>
+    </span>
+    <button mat-raised-button
+          style='float: right;'
+          color='primary'
+          (click)='openModalDialog()'>
+          Open Modal
+    </button>
+</div>
+<br/>
+<div class='listcontainer'>
+  <div id='sessionlogdiv' #sessionlogdiv>
+    <span class='codestyle'>{{SessionLogText}}</span>
+  </div>
+</div>
+<!--
+  <div *ngIf='showModal'>
+  <app-output-display-modal
+    [SessionLogText]='SessionLogText'>
+  </app-output-display-modal>
+</div>
+</app-output-display-modal>(sendDataToChild)='updateModalComponent($event)'>
+-->

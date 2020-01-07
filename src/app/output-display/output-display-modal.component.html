@@ -1,0 +1,17 @@
+<h1 mat-dialog-title>Session Log
+  <div #spinner style='display: none;'>
+    <mat-progress-spinner
+      diameter='20'
+      color='primary'
+      mode='indeterminate'>
+    </mat-progress-spinner>
+  </div>
+</h1>
+<div #sessionlogmodal mat-dialog-content class='codestyle'>
+  {{data.SessionLogText}}
+</div>
+<!--
+<div mat-dialog-actions>
+  <button mat-button [mat-dialog-close]="data.animal" cdkFocusInitial>Ok</button>
+</div>
+-->

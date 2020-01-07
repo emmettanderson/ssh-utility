@@ -1,0 +1,86 @@
+import { Component, EventEmitter, OnInit, ChangeDetectionStrategy} from '@angular/core';
+import { ViewChild, SimpleChange, OnChanges, ElementRef, Input, Output } from '@angular/core';
+import { OutputDisplayService } from '../api/output-display.service';
+import { SessionLog } from '../models/submit.model';
+import { OutputDisplayModalComponent } from './output-display-modal.component';
+import { timer, of, Observable, Subject, BehaviorSubject } from 'rxjs';
+import { switchMap, startWith, takeUntil, catchError } from 'rxjs/operators';
+import { interval } from 'rxjs/internal/observable/interval';
+import { ObserveOnMessage } from 'rxjs/internal/operators/observeOn';
+
+export interface SessionLogInt {
+  ProcessComplete: number | string;
+  SessionLog: string;
+}
+
+@Component({
+  selector: 'app-output-display',
+  templateUrl: './output-display.component.html',
+  styleUrls: ['./output-display.component.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush
+})
+export class OutputDisplayComponent implements OnInit, OnChanges {
+  @Input() LogRowId: any;
+  @Input() SessionLog: SessionLog;
+  @Input() SessionLogCounter: number;
+  @Input() SessionLogText: any;
+  @Input() ProcessComplete: any;
+  @Input('sessionLog') sessionLog;
+
+  @Output() sendDataToParent = new EventEmitter<any>();
+  @ViewChild('sessionlog') sessionlog: ElementRef;
+  @ViewChild('sessionlogdiv') sessionlogdiv: ElementRef;
+
+  testEmitter = new BehaviorSubject<SessionLogInt>(this.SessionLog);
+  public interval: any = '';
+
+  private scrollToBottom() {
+    this.sessionlogdiv.nativeElement.scrollTop = this.sessionlogdiv.nativeElement.scrollHeight;
+  }
+
+  constructor(private _outputDisplayService: OutputDisplayService) {
+    this.SessionLog = {'SessionLog': 'Init', 'ProcessComplete': '-1'};
+    this.LogRowId = {'LogRowId': ''};
+  }
+
+  ngOnChanges() {
+    if (this.LogRowId && (this.interval === '')) {
+
+      this.interval = setInterval(() => {
+        this.updateSessionLog(this.LogRowId);
+        this.checkStatus(this.SessionLog, this.interval);
+        this.sendDataToParent.emit(this);
+        this.scrollToBottom();
+        console.log('updateSessionLog SessionLog: ' + this.SessionLog.ProcessComplete);
+      }, 1000);
+    }
+  }
+
+  checkStatus(sessionLog, intervalId) {
+    // Check if process is complete
+    if (sessionLog && typeof sessionLog !== 'undefined') {
+      if (sessionLog.ProcessComplete === '1') {
+        if (intervalId) {
+          clearInterval(intervalId);
+        }
+      }
+    }
+  }
+
+  updateSessionLog(LogRowId) {
+    if (LogRowId && typeof LogRowId !== 'undefined') {
+      this._outputDisplayService.getSessionLog(LogRowId.LogRowId)
+        .subscribe(data => {
+          this.SessionLog = data;
+          console.log('output display service data: ', data);
+      });
+    }
+    console.log('updateSessionLog SessionLog: ' + this.SessionLog);
+ }
+
+  ngOnInit() {
+    this.SessionLog = {'SessionLog': '', 'ProcessComplete': '-1'};
+    this.LogRowId = {'LogRowId': ''};
+    // this.SessionLogCounter = 0;
+  }
+}

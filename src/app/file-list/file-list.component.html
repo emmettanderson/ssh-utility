@@ -1,0 +1,78 @@
+<div class='row'>
+  <div class='column'>
+      <span class='compcaption'>File Transfer</span>
+      <button #addbutton
+            mat-stroked-button
+            matSuffix
+            style='float: right;'
+            (click)='addItem(newSrcItem.value, newDestItem.value,1)'
+            color='primary'>Add
+      </button>
+  </div>
+</div>
+<div class='row'>
+  <div class='column'>
+    <mat-form-field style='width: 100%' action='postSourceFile( )'>
+        <input matInput
+              #newSrcItem
+              placeholder='Source File (local)'
+              style='min-width:15em;'>
+    </mat-form-field>
+  </div>
+</div>
+<div class='row'>
+  <div class='column'>
+    <mat-form-field
+          title='Enter "[Healthshare]/filepath/filename.type"
+                 to indicate the default healthshare installation
+                 path for the target environment.
+                 For example, IDEVs install dir is /app01/idev/hie/healthshare.'
+          style='width: 100%'>
+      <input matInput
+              #newDestItem
+              placeholder='Destination File'
+              style='min-width:15em;'>
+    </mat-form-field>
+  </div>
+</div>
+<div class='row'>
+  <div id='filelistdiv'>
+    <mat-list dense span='margin-top:2em'>
+      <mat-list-item *ngFor='let srcfile of srcFileAry;let i=index;'>
+        <p mat-line>
+          <span class='codestyle'
+                style='word-wrap: break-word;'>
+                Source: {{srcfile}}
+          </span>
+        </p>
+        <p mat-line>
+          <span class='codestyle'
+                style='word-wrap: break-word;'>
+                    Dest: {{destFileAry[i]}}
+          </span>
+          <span style='float: right;position: relative;top: -18px;'>
+            <button mat-icon-button>
+              <i (click)='editItem(i)' class='fa fa-edit'></i>
+            </button>
+            <button mat-icon-button>
+              <i (click)='removeItem(i)' class='fa fa-remove'></i>
+            </button>
+          </span>
+        </p>
+      </mat-list-item>
+    </mat-list>
+  </div>
+</div>
+
+
+    <!--
+    <form #fileinputform
+        enctype='multipart/form-data'
+        style='display:none'>
+      <input #fileInput
+        name='fileInput'
+        style='display:none;'
+        type='file'
+        (change)='onFileInput($event)'>
+    </form>
+    -->

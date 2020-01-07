@@ -1,1 +1,150 @@
-/* You can add global styles to this file, and also import other style files */
+/* Master Styles */
+
+@import "~bootstrap/dist/css/bootstrap.css";
+@import "~font-awesome/css/font-awesome.css";
+@import "~@ng-select/ng-select/themes/default.theme.css";
+@import "~@angular/material/prebuilt-themes/indigo-pink.css";
+/*@import "../node_modules/@angular/material/prebuilt-themes/deeppurple-amber.css";*/
+
+
+h1 {
+  color: #369;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 250%;
+}
+h2, h3 {
+  color: #444;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: lighter;
+}
+body {
+  margin: 10px;
+  background-color: aliceblue;
+}
+body, input[text], button {
+  color: #888;
+  font-family: Cambria, Georgia;
+}
+a {
+  cursor: pointer;
+  cursor: hand;
+}
+
+button {
+  font-family: Arial;
+  background-color: #eee;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  cursor: hand;
+}
+button:hover {
+  background-color: #cfd8dc;
+}
+button:disabled {
+  background-color: #eee;
+  color: #aaa;
+  cursor: auto;
+}
+
+/* Navigation link styles */
+nav a {
+  padding: 5px 10px;
+  text-decoration: none;
+  margin-right: 10px;
+  margin-top: 10px;
+  display: inline-block;
+  background-color: #eee;
+  border-radius: 4px;
+}
+nav a:visited, a:link {
+  color: #607D8B;
+}
+nav a:hover {
+  color: #039be5;
+  background-color: #CFD8DC;
+}
+nav a.active {
+  color: #039be5;
+}
+
+/* everywhere else */
+* {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* custom material styles */
+.mat-icon-button {
+  width: 24px !important;
+  height: 24px !important;
+  flex-shrink: 0 !important;
+  line-height: 24px !important;
+}
+.mat-form-field {
+  width: 100% !important;
+  font-size: .75em !important;
+}
+tr.mat-header-row {
+  height: 30px !important;
+}
+tr.mat-row {
+  height: 50px !important;
+}
+.mat-input {
+  font-size: .75em !important;
+}
+td.mat-cell span {
+  display: block;
+  /*max-height: 30px !important;*/
+}
+.mat-cell {
+  max-width: 200px;
+  max-height: 50px !important;
+  overflow-x: hidden !important;
+  overflow-y: hidden !important;
+  text-overflow: ellipsis;
+  font-size: .75em !important;
+  padding: 5px !important;
+  vertical-align: middle !important;
+  /*word-break: break-all;*/
+}
+.mat-select {
+  width: 98% !important;
+  /*width: auto !important;*/
+  border-color: #007bff !important;
+}
+
+.mat-row:nth-child(even), .mat-list-item:nth-child(even){
+  background-color: honeydew;
+}
+
+.mat-row:nth-child(odd), .mat-list-item:nth-child(odd){
+  background-color: aliceblue;
+}
+
+.mat-list-item {
+  border-bottom: 1px solid lightgrey;
+  padding-top: 2px;
+  height: auto !important;
+  font-size: 1em;
+  /*height: 60px !important;*/
+}
+
+.mat-list-item span i {
+  margin-left: 10px;
+  font-size: 1.25em;
+}
+
+ng-dropdown-panel {
+  width: auto !important;
+}
+/* material table styles */
+.mat-elevation-z8 {
+  width: 100%;
+}
+/*
+Copyright 2017-2018 Google Inc. All Rights Reserved.
+Use of this source code is governed by an MIT-style license that
+can be found in the LICENSE file at http://angular.io/license
+*/

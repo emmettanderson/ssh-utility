@@ -1,0 +1,66 @@
+<div class='row'>
+  <div class='column'>
+      <span class='compcaption'>Target Environments</span>
+    <mat-form-field shouldLabelFloat=0>
+      <mat-select
+        #groupnameelem
+        placeholder='Select Target Environments'
+        ariaLabel=''
+        [(ngModel)]='GroupName'
+        (ngModelChange) = 'onChangeTargetGroupHandler($event)'>
+        <mat-option
+          *ngFor='let targetgroup of targetgroups'
+          [value]='targetgroup.GroupName'>
+            {{targetgroup.GroupName}}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+  <!--  <ng-select
+          [items]='targetgroups'
+          bindLabel='GroupName'
+          bindValue='GroupName'
+          placeholder='Select Target Group'
+          [(ngModel)]='GroupName'
+          [selectOnTab]='true'
+          (ngModelChange)='onChangeTargetGroupHandler($event)'>
+          <ng-option
+            *ngFor='let targetgroup of targetgroups'
+            [value]='targetgroup.GroupName'>
+              {{targetgroup.GroupName}}
+          </ng-option>
+    </ng-select>
+  -->
+  </div>
+</div>
+<div class='row'>
+  <div id='targetlistdiv' class='column'>
+    <span style='height:1em;padding:2px;font-weight:bold;font-size:.8em;margin:0;'>Selected Environments: </span>
+    <ul style='display:inline-flex;list-style-type:none;padding:0;'>
+      <li *ngFor='let target of targets'>
+        <span style='margin-right: 5px;padding-right:5px;font-size:.8em;border-right: 1px solid lightgray;'>{{target.HostName}}</span>
+      </li>
+    </ul>
+  </div>
+<!--
+<div class='row'>
+  <div id='targetlistdiv' class='column' style='display:none'>
+    <mat-list dense>
+        <mat-list-item>
+          <span style='height:1em;padding:2px;font-weight:bold;font-size:.8em;' (click)='closeList()'>Selected Environments:
+            <i class='fa fa-window-close'></i>
+          </span>
+        </mat-list-item>
+        <mat-list-item *ngFor='let target of targets'>
+          <span mat-line>{{target.HostName}}</span>
+          <mat-divider [vertical]="true"></mat-divider>
+        </mat-list-item>
+      </mat-list>
+
+    <mat-list>
+      <mat-list-item><span style='height:1em;padding:2px;;font-weight:bold;font-size:.8em'>Selected Environments:</span></mat-list-item>
+      <mat-list-item *ngFor='let target of targets' style='height: 1em'>
+        <span style='padding:0;font-size:.75em;'>{{target.HostName}}</span>
+      </mat-list-item>
+    </mat-list>
+  -->
+</div>

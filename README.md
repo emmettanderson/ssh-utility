@@ -1,27 +1,43 @@
 # SshUtility
+Tool for executing cache terminal commands via SSH and transferring files via SFTP to multiple AIX servers.
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 8.3.21.
+Added custom TrakLayoutPatch save/load feature - This allows users to apply trak layout changes for specific component, context, chart, chart item, transform, icon definition, etc. rather than applying layout changes instance-wide.
 
-## Development server
+Added Deploy Page menu button: this simply lists target environments with class property DeployPage valued. Upon selecting the environment, the configured deployment web page will open in a new tab.
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
+*** Apologies - Currently designed for Northwell Health site implementation.
+***             Ongoing development to make site-agnostic. 
 
-## Code scaffolding
+## Installation
+1.) Import HieCOMMONLIBSSHToolsV1.xml COS classes into local HS environment
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+2.) Run methods in desired HS namespace - Modify Populate method to suit specific implementation - current code is for Northwell implementations: 
+  > Do ##Class(CUSTOM.CORE.Util.SSHTool.GeneralConfig).Configure() 
 
-## Build
+3.) Add your local instance user:pass to /src/app/api/api.config.ts:
+  > Class ApiConfig:
+  
+  > > Line: public UserPassBasic = 'Basic ' + btoa('janderson:demo');
+  
+  > > Replace 'janderson:demo' with your local environment 'user:password'
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory. Use the `--prod` flag for a production build.
+4.) Add your local host url:port to /src/environments.ts
+  > export const environment = {
+  
+  > > production: false,
+  
+  > > apiUrl: 'http://localhost:57772'
+  
+  > };
 
-## Running unit tests
+5.) Build distribution
+	>  ng build --prod --base-href ./
+	
+6.) For Trak Layout Patch Feature to work:
+  > CUSTOM.CORE.Util.TrakLayout.Utility must be deployed to all environments where Trak Layout patches might be applied. This is to facilitate the loading/applying of the layout patch file.
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
-
-## Running end-to-end tests
-
-Run `ng e2e` to execute the end-to-end tests via [Protractor](http://www.protractortest.org/).
-
-## Further help
-
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI README](https://github.com/angular/angular-cli/blob/master/README.md).
+7.) For webTerminal install: 
+  > Download installer:
+  > > https://intersystems-community.github.io/webterminal/#downloads   
+  > Documentation:
+  > > https://intersystems-community.github.io/webterminal/#docs

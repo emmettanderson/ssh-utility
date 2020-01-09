@@ -1,4 +1,4 @@
-import { Component, ChangeDetectorRef, Input, OnInit, ViewChild, ElementRef, Inject } from '@angular/core';
+import { Component, ChangeDetectorRef, Input, OnInit, ViewChild, ElementRef, Inject, OnChanges } from '@angular/core';
 
 /*
 import { OutputDisplayComponent } from './output-display/output-display.component';
@@ -13,10 +13,11 @@ import { SessionLog } from './models/submit.model';
 import { SubmitService } from './api/submit.service';
 import { SubmitList } from './models/submit.model';
 import { TargetList } from './models/target-list.model';
+import { DeployModalComponent } from './deploy-modal/deploy-modal.component';
 
 import { TargetListService } from './api/target-list.service';
 import { Observable, Subject } from 'rxjs';
-import { MatSelect } from '@angular/material';
+import { MatSelect, MatDialog, MatDialogRef } from '@angular/material';
 
 // import { MatButton } from '@angular/material';
 
@@ -41,13 +42,15 @@ export class AppComponent implements OnInit {
   Interval: any;
   targets: any = [];
   HostName: string;
+  deployUrl: any;
   /*
   trakLayoutComponent: TrakLayoutComponent;
   fileListComponent: FileListComponent;
   commandListComponent: CommandListComponent;
   outputDisplayComponent: OutputDisplayComponent;
   */
-
+  public modalDialogRef: MatDialogRef<DeployModalComponent>;
+  public showModal: boolean;
 
   @Input() SubmitList: SubmitList;
   @ViewChild('description', {static: false}) description: ElementRef;
@@ -55,7 +58,8 @@ export class AppComponent implements OnInit {
 
   constructor(
     private _submitService: SubmitService,
-    private _targetListService: TargetListService
+    private _targetListService: TargetListService,
+    public modalDialog: MatDialog
     // private _changeDetectorRef: ChangeDetectorRef
   ) { }
 
@@ -74,7 +78,13 @@ export class AppComponent implements OnInit {
       alert(target.HostName + ': No Deploy Path Configured.');
       return false;
     }
-    window.open('https://' + target.HostUrl + target.DeployPath);
+    this.deployUrl = 'https://' + target.HostUrl + target.DeployPath;
+    this.showModal = true;
+    this.modalDialogRef = this.modalDialog.open(DeployModalComponent, {
+        width: '800px',
+        height: '85%',
+        data: {deployUrl: this.deployUrl, target: target.HostName}
+      })
   }
 
   eventFromChild(historylist: HistoryList[]) {
@@ -179,3 +189,7 @@ export class AppComponent implements OnInit {
     this.Submitted = new Date();
   }
 }
+
+
+
+

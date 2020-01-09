@@ -1,0 +1,12 @@
+<h1 mat-dialog-title>Deployment {{data.target}}
+  <div #spinner style='display: none;'>
+    <mat-progress-spinner
+      diameter='20'
+      color='primary'
+      mode='indeterminate'>
+    </mat-progress-spinner>
+  </div>
+</h1>
+<div #deploymodal mat-dialog-content class='codestyle'>
+  <iframe [src]='urlSafe' style='height:100%;width:100%'></iframe>
+</div>

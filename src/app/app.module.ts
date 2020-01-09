@@ -32,6 +32,7 @@ import { FileListComponent } from './file-list/file-list.component';
 import { OutputDisplayModalComponent, OutputDisplayComponent } from './output-display/output-display.component';
 import { TrakLayoutComponent } from './trak-layout/trak-layout.component';
 import { TerminalComponent } from './terminal/terminal.component';
+import { DeployModalComponent } from './deploy-modal/deploy-modal.component';
 
 @NgModule({
   declarations: [
@@ -43,7 +44,8 @@ import { TerminalComponent } from './terminal/terminal.component';
     OutputDisplayComponent,
     OutputDisplayModalComponent,
     TrakLayoutComponent,
-    TerminalComponent
+    TerminalComponent,
+    DeployModalComponent
   ],
   imports: [
     BrowserModule,
@@ -79,9 +81,13 @@ import { TerminalComponent } from './terminal/terminal.component';
     MatIconModule,
     MatCheckboxModule,
     MatMenuModule,
-    OutputDisplayModalComponent
+    OutputDisplayModalComponent,
+    DeployModalComponent
   ],
-  entryComponents: [OutputDisplayModalComponent],
+  entryComponents: [
+    OutputDisplayModalComponent,
+    DeployModalComponent
+  ],
   providers: [
     ApiService,
     {

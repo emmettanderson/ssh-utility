@@ -78,13 +78,13 @@ export class AppComponent implements OnInit {
       alert(target.HostName + ': No Deploy Path Configured.');
       return false;
     }
-    this.deployUrl = 'https://' + target.HostUrl + target.DeployPath;
+    this.deployUrl = 'http://' + target.HostUrl + target.DeployPath;
     this.showModal = true;
     this.modalDialogRef = this.modalDialog.open(DeployModalComponent, {
         width: '800px',
         height: '85%',
-        data: {deployUrl: this.deployUrl, target: target.HostName}
-      })
+        data: {deployUrl: this.deployUrl, target: target.HostName, sessiontoken: ''}
+      });
   }
 
   eventFromChild(historylist: HistoryList[]) {

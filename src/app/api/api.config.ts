@@ -51,6 +51,12 @@ export class TrakLayoutApiConfig {
 }
 
 @Injectable({ providedIn: 'root' })
+export class SessionTokenApiConfig {
+  public RestApi = '/csp/rest/sshtools/getsessiontoken/';
+  public RestApiUrl = API_URL + this.RestApi;
+}
+
+@Injectable({ providedIn: 'root' })
 export class ApiConfig {
   // janderson:demo = amFuZGVyc29uOmRlbW8=
   // add your local user:pass here

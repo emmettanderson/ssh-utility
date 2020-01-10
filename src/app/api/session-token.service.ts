@@ -20,7 +20,7 @@ import { SessionToken } from '../models/session-token.model';
 })
 
 export class SessionTokenService {
-  public actionUrl: string;
+  private actionUrl: string;
   SessionToken: SessionToken;
 
   constructor(

@@ -82,8 +82,8 @@ export class AppComponent implements OnInit {
     this.showModal = true;
     this.modalDialogRef = this.modalDialog.open(DeployModalComponent, {
         width: '800px',
-        height: '85%',
-        data: {deployUrl: this.deployUrl, target: target.HostName, sessiontoken: ''}
+        height: '600px',
+        data: {deployUrl: this.deployUrl, target: target.HostName, urlSafe: ''}
       });
   }
 

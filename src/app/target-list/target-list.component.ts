@@ -11,6 +11,7 @@ export interface TargetListInt {
   id: number;
   HostName: string;
   HostUrl: string;
+  AlternateHostUrl: string;
   DeployPath: string;
 }
 

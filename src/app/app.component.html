@@ -35,7 +35,7 @@
                   *ngFor='let target of targets'
                   [value]='target'
                   (click)='onClickDeployTarget(target)'>
-                  {{target.HostName}}
+                  {{target.DeployPath ? target.HostName : ''}}
           </button>
         </mat-menu>
       </li>

@@ -1,4 +1,13 @@
-<h1 mat-dialog-title>{{data.target}} Deployment Page</h1>
-<div #deploymodal mat-dialog-content class='codestyle'>
-  <iframe [src]='urlSafe' style='height:492px;width:100%'></iframe>
+<h1 mat-dialog-title>{{data.target}} Deployment Page
+  <button
+    #setupbutton
+    mat-raised-button
+    style='margin-left: 10px; vertical-align: top;float: right;'
+    color='primary'
+    (click)='onClickButton()'>
+    {{btnCaption}}
+  </button>
+</h1>
+<div #deploymodal mat-dialog-content style='overflow:hidden'>
+  <iframe #deployiframe [src]='urlSafe' style='height:593px;width:830px'></iframe>
 </div>

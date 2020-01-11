@@ -73,16 +73,24 @@ export class AppComponent implements OnInit {
   }
 
   onClickDeployTarget(target) {
-    console.log('OnChangeDeployTargetHandler: ' + target.HostUrl + target.DeployPath);
     if (target.DeployPath === '') {
       alert(target.HostName + ': No Deploy Path Configured.');
       return false;
     }
-    this.deployUrl = 'http://' + target.HostUrl + target.DeployPath;
+    let hostUrl = '';
+    if (target.AlternateHostUrl && target.AlternateHostUrl !== '') {
+      hostUrl = target.AlternateHostUrl;
+    } else {
+      hostUrl = target.HostUrl;
+    }
+    this.deployUrl = 'http://' + hostUrl + target.DeployPath;
+
+    console.log('OnChangeDeployTargetHandler: ' + 'target.HostName: ' + target.HostName + ' Url: ' + this.deployUrl);
+
     this.showModal = true;
     this.modalDialogRef = this.modalDialog.open(DeployModalComponent, {
-        width: '800px',
-        height: '600px',
+        width: '880px',
+        height: '710px',
         data: {deployUrl: this.deployUrl, target: target.HostName, urlSafe: ''}
       });
   }

@@ -8,7 +8,6 @@ Added Deploy Page menu button: This is now a modal pop-up with the SVN deploymen
 Added webterminal component. Enhanced installer method. 
 
 *** Apologies - Currently designed for Northwell Health site implementation.
-
 ***             Ongoing development to make site-agnostic.
 
 ## Installation

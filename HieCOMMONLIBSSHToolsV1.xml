@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2018.1.1 (Build 312_1_18859U)" ts="2020-01-07 20:35:20">
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2018.1.1 (Build 312_1_18859U)" ts="2020-01-10 23:48:31">
 <Class name="CUSTOM.CORE.REST.SSHToolUtils">
 <Super>%CSP.REST</Super>
-<TimeChanged>65385,72656.653663</TimeChanged>
+<TimeChanged>65388,56587.405552</TimeChanged>
 <TimeCreated>65048,58615</TimeCreated>
 
 <Parameter name="HandleCorsRequest">
@@ -26,6 +26,7 @@ This UrlMap maps http requests to the classmethod to which it should be dispatch
 <Route Url="/gethistorylist/" Method="GET" Call="GetHistoryList"/>
 <Route Url="/gethistorylist/remove/:RowId" Method="GET" Call="GetHistoryList"/>
 <Route Url="/getsessionlog/:RowId" Method="GET" Call="GetSessionLog"/>
+<Route Url="/getsessiontoken/:Target" Method="GET" Call="GetSessionToken"/>
 <Route Url="/submit/" Method="POST" Call="Submit"/>
 <Route Url="/srcfileinput/" Method="POST" Call="CopyFileToTempDirectory"/>
 <Route Url="/checksyntax/:CodeString" Method="GET" Call="CheckCodeSyntax"/>
@@ -94,6 +95,43 @@ This UrlMap maps http requests to the classmethod to which it should be dispatch
 	Job ..RunSSHCommand(LogObject.%Id())
 	
  	Kill LogObject
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="GetSessionToken">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>Target:%String=""</FormalSpec>
+<ProcedureBlock>0</ProcedureBlock>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set Status = $$$OK
+	If Target = "" Quit Status
+	Set Response = ""
+	Try {
+		Set TargetObject = ##Class(CUSTOM.CORE.Util.SSHTool.TargetConfig).HostNameOpen(Target)
+		If '$IsObject(TargetObject) Quit 
+		Set Status = ..GetCredentials(TargetObject, .HSCredentials, .SSHCredentials)
+		
+		Set Request = ##Class(%Net.HttpRequest).%New()
+		
+		Set Request.Username = HSCredentials.Username
+		Set Request.Password = HSCredentials.Password
+		
+		Set Server = TargetObject.AlternateHostUrl
+		If Server = "" Set Server = TargetObject.HostUrl 
+		Set Request.Server = Server
+		
+		Set Status = Request.Get("/csp/rest/sessiontokenservice/session")
+				
+		If $$$ISERR(Status) {
+			Set Status = $System.Status.GetErrorText(Status)
+		} Else {
+			Set Response = Request.HttpResponse.Data.Read()
+		}
+	} Catch {}
+	Write Response
+	Set Status = ""
 	Quit $$$OK
 ]]></Implementation>
 </Method>
@@ -192,6 +230,7 @@ This UrlMap maps http requests to the classmethod to which it should be dispatch
 			Set ProxyObject.id = TargetObject.%Id()
 			Set ProxyObject.HostName = TargetObject.HostName
 			Set ProxyObject.HostUrl = TargetObject.HostUrl
+			Set ProxObject.AlternateHostUrl = TargetObject.AlternateHostUrl
 			Set ProxyObject.DeployPath = TargetObject.DeployPath
 			
 			Set Status = ##class(%ZEN.Auxiliary.jsonProvider).%WriteJSONStreamFromObject(tJsonStream,ProxyObject,,,0,"") 
@@ -199,7 +238,7 @@ This UrlMap maps http requests to the classmethod to which it should be dispatch
 	} Else {
 		&SQL(
 			DECLARE GetTargetList CURSOR FOR
-			SELECT ID, HostName, HostUrl, DeployPath 
+			SELECT ID, HostName, HostUrl, AlternateHostUrl, DeployPath 
 			FROM CUSTOM_CORE_Util_SSHTool.TargetConfig 
 		)
 		
@@ -209,12 +248,13 @@ This UrlMap maps http requests to the classmethod to which it should be dispatch
 		Set ProxyObject = ##Class(%ZEN.proxyObject).%New()
 		
 		For {
-			&SQL(FETCH GetTargetList INTO :RowId, :HostName, :HostUrl, :DeployPath)
+			&SQL(FETCH GetTargetList INTO :RowId, :HostName, :HostUrl, :AlternateHostUrl, :DeployPath)
 			If SQLCODE Quit
 			
 			Set ProxyObject.id = RowId
 			Set ProxyObject.HostName = HostName
 			Set ProxyObject.HostUrl = HostUrl
+			Set ProxyObject.AlternateHostUrl = AlternateHostUrl
 			Set ProxyObject.DeployPath = DeployPath
 			Set Status = ##class(%ZEN.Auxiliary.jsonProvider).%WriteJSONStreamFromObject(tJsonStream,ProxyObject,,,0,"") 
 		}
@@ -681,6 +721,174 @@ Need to create credentials on Local AG production for SSHLogin and ADLogin</Desc
 </Class>
 
 
+<Class name="CUSTOM.CORE.REST.SessionTokenService">
+<Description>
+Provide a custom REST interface to the acquire a CSP Session Token and store parameter in session. </Description>
+<Super>%CSP.REST</Super>
+<TimeChanged>65296,64516.427552</TimeChanged>
+<TimeCreated>64941,59679</TimeCreated>
+
+<Parameter name="UseSession">
+<Type>Integer</Type>
+<Default>1</Default>
+</Parameter>
+
+<XData name="UrlMap">
+<Description>
+This UrlMap maps http requests to the classmethod to which it should be dispatched
+</Description>
+<Data><![CDATA[
+<Routes>
+<Route Url="/session" Method="POST" Call="StartSession"/>
+<Route Url="/session" Method="GET" Call="GetSession"/>
+</Routes>
+]]></Data>
+</XData>
+
+<Method name="StartSession">
+<ClassMethod>1</ClassMethod>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+    Set %response.ContentType="application/json"
+	#Dim %session As %CSP.Session
+	Set %session.Data("ssoINIT") = 1
+	#; Store session variables to %session with "sso" prefix.
+	Set tSC = ##class(%ZEN.Auxiliary.jsonProvider).%ParseJSON(%request.Content,"",.tObjectList)
+	Set pArrayCount = tObjectList.%data("sessionparameters").Count()
+	For i=1:1:pArrayCount {
+		Set pName = tObjectList.%data("sessionparameters").GetAt(i).%data("name")
+		Set pValue = tObjectList.%data("sessionparameters").GetAt(i).%data("value")
+		If $Extract(pValue,1,6)="https:" {
+			Set %session.Data("sso"_pName) = pValue
+		} Else { 
+			Set %session.Data("sso"_pName) = $ZCVT(pValue,"O","JS")
+		}	
+	}
+	#; integrated access is audited
+	Do ..AuditSessionTokenRequest(tObjectList)
+	#; send REST request to BUS that stores the ssoUserName, ssoclientApplicationId
+	#; This value is checked by PatientRecord method to see if the same user has opened 
+	#; another patient in a new window/tab even if AGs are on different domains
+	If $Get(%session.Data("ssoclientApplicationId")) '= "" && ($Get(%session.Data("ssoUserName")) '= "") {
+		If ##Class(CUSTOM.ACCESS01.UI.ClientAppConfig).CheckSessionConflictGetStored(%session.Data("ssoclientApplicationId")) {
+			Set Status = ..UpdateClientAppTrackerCount(%session.Data("ssoclientApplicationId"),%session.Data("ssoUserName"))
+		}
+	}
+	Set HostEndpoint = ""
+	Set ServiceObj = ##class(HS.Registry.Service.SOAP).EndPointForNameType($SYSTEM.INetInfo.LocalHostName()_":"_$namespace,"SOAP")
+	If $IsObject(ServiceObj) Set HostEndpoint = ServiceObj.Host
+	Set sToken = "{""sessiontoken"":"""_%session.CSPSessionCookie_""",""host"":"""_HostEndpoint_"""}"
+    Write sToken
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="UpdateClientAppTrackerCount">
+<Description>
+Updates count for given ClientApplicationId/User - Checked by PatientRecord:IsClientSessionValid</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>ClientApplicationId:%String="",ssoUsername:%String=""</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	#Dim tConfig As HS.Registry.Service.HTTP
+	Set Status = $$$OK
+	Try {
+		If ClientApplicationId = "" || (ssoUsername = "") Quit
+		
+		Set tConfig = ##Class(HS.Registry.Service.HTTP).EndPointForNameType("ClientAppTrackerService","HTTP")
+		If '$IsObject(tConfig) Quit
+		
+		Set CredentialsId = tConfig.HTTPCredentialsConfig
+		If CredentialsId = "" Set CredentialsId = "HS_Services"
+		Set Credentials = ##Class(Ens.Config.Credentials).%OpenId(CredentialsId)
+		If '$IsObject(Credentials) Quit
+		
+		Set Request = ##Class(%Net.HttpRequest).%New()
+		Set Request.Server = tConfig.Host 
+		Set Request.Port = tConfig.Port
+		Set Request.Timeout = $Case('tConfig.Timeout,1:10,:tConfig.Timeout)
+		Set Request.Https = (tConfig.SSLConfig '= "")
+		Set Request.Authorization = "Basic "_$System.Encryption.Base64Encode(Credentials.Username_":"_Credentials.Password)
+		Set Request.SSLConfiguration = tConfig.SSLConfig
+		Set Request.SSLCheckServerIdentity = tConfig.SSLCheckServerIdentity
+		
+		Set Path = $ZCVT("/set/"_ClientApplicationId_"/"_ssoUsername,"O","URL")
+		Set Status = Request.Get(tConfig.URL_Path)
+		
+		If $$$ISERR(Status) {
+			Set %session.Data("ClientAppUserCount",ClientApplicationId,ssoUsername) = Status
+		} ElseIf $IsObject(Request.HttpResponse) && ($IsObject(Request.HttpResponse.Data)) {
+			Set Status = ##Class(%ZEN.Auxiliary.jsonProvider).%ConvertJSONToObject(Request.HttpResponse.Data.Read(),,.ProxyObject)
+		 	If '$IsObject(ProxyObject) || ($$$ISERR(Status)) Quit
+			Set %session.Data("ClientAppUserCount",ClientApplicationId,ssoUsername) = ProxyObject.count
+		}		
+	} Catch {}
+	Quit Status
+]]></Implementation>
+</Method>
+
+<Method name="AuditSessionTokenRequest">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>tObjectList:%String</FormalSpec>
+<Implementation><![CDATA[
+	Set AuditLogClass = "CUSTOM.ACCESS01.UI.AuditLog"
+	If '##Class(%Dictionary.ClassDefinition).%ExistsId(AuditLogClass) Quit
+	Set AuditLog = $ClassMethod(AuditLogClass,"%New")
+	If $IsObject(AuditLog){
+		Set AuditLog.EventType = "User-SessionTokenService"
+		Set AuditLog.Username = $Username
+		Set AuditLog.EventDate = +$Horolog
+		Set AuditLog.EventTime = $Piece($Horolog,",",2)
+		Set AuditLog.ExternalUsername = $Get(%session.Data("ssoUserName"))
+		Set AuditLog.ExternalApplication = $Get(%session.Data("ssoclientApplicationId"))
+		Set AuditLog.HostName = $SYSTEM.INetInfo.LocalHostName()
+		//Additional details
+		Set pArrayCount = tObjectList.%data("sessionparameters").Count()
+		Set AdditionalDetails=""
+			For i=1:1:pArrayCount {
+				Set pName = tObjectList.%data("sessionparameters").GetAt(i).%data("name")
+				Set pValue = tObjectList.%data("sessionparameters").GetAt(i).%data("value")
+				Set AdditionalDetails=AdditionalDetails_"~"_pName_":"_pValue
+			}
+		Set AuditLog.AdditionalDetail=$Piece(AdditionalDetails,"~",2,*)
+		Set AuditLog.PatientName = ""
+		Set AuditLog.MPIID = ""
+		Set AuditLog.ChartName = ""
+		Do AuditLog.%Save()
+	}
+	Quit
+]]></Implementation>
+</Method>
+
+<Method name="TestClientAppTracker">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>ClientAppId:%String="SCM",ExtUsername:%String="cvtest1"</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set Status = ..UpdateClientAppTrackerCount(ClientAppId,ExtUsername)
+	Quit Status
+]]></Implementation>
+</Method>
+
+<Method name="GetSession">
+<ClassMethod>1</ClassMethod>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+    //Set %response.ContentType=%request.ContentType
+    Set %response.ContentType="application/json"
+	#Dim %session As %CSP.Session
+	Set %session.Data("ssoINIT") = 1
+	Set HostEndpoint = ""
+	Set ServiceObj = ##class(HS.Registry.Service.SOAP).EndPointForNameType($SYSTEM.INetInfo.LocalHostName()_":"_$namespace,"SOAP")
+	If $IsObject(ServiceObj) Set HostEndpoint = ServiceObj.Host
+	Set sToken = "{""sessiontoken"":"""_%session.CSPSessionCookie_""",""host"":"""_HostEndpoint_"""}"
+    Write sToken
+	Quit $$$OK
+]]></Implementation>
+</Method>
+</Class>
+
+
 <Class name="CUSTOM.CORE.Util.SSHTool.GeneralConfig">
 <Super>%Persistent</Super>
 <TimeChanged>65385,69955.878025</TimeChanged>
@@ -1126,7 +1334,7 @@ Destination Files sent to environments</Description>
 
 <Class name="CUSTOM.CORE.Util.SSHTool.TargetConfig">
 <Super>%Persistent</Super>
-<TimeChanged>65371,65387.483802</TimeChanged>
+<TimeChanged>65388,58084.616669</TimeChanged>
 <TimeCreated>65029,70834</TimeCreated>
 
 <Property name="HostName">
@@ -1139,6 +1347,13 @@ Destination Files sent to environments</Description>
 </Property>
 
 <Property name="Description">
+<Type>%String</Type>
+<Parameter name="MAXLEN" value="32000"/>
+</Property>
+
+<Property name="AlternateHostUrl">
+<Description>
+For example, if there is an alias url or csp gateway frontend</Description>
 <Type>%String</Type>
 <Parameter name="MAXLEN" value="32000"/>
 </Property>
@@ -1206,16 +1421,39 @@ Northwell-specific default values</Description>
 	Set TargetList = $ListBuild("hshiedev01","hshieidev01","hshieqa01","hsagstage01","hsagstage04a","hsagstage04b","hsagprod01","hsagprod04a","hsagprod04b","hsagprod04c","hsagprod04d","hsregstage01","hsregprod01","hsedgestage01","hsedgeprod01","hsbusstage01","hsbusprod01")
 	Set DescList = $ListBuild("HIE DEV Server","HIE IDEV Server","HIE QA Server","Stage01 Access Gateway","Stage04-a Access Gateway","Stage04-b Access Gateway","Prod01 Access Gateway","Prod04-a Access Gateway","Prod04-b Access Gateway","Prod04-c Access Gateway","Prod04-d Access Gateway ","Stage Registry","Prod Registry","Stage Edge","Prod Edge","Stage Bus","Prod Bus")
 	Set HSInstallPathList = $ListBuild("dev","idev","qa","stage","stage","stage","prd","prd","prd","prd","prd","stage","prd","stage","prd","stage","prd")
-	
+	Set AltHostUrlList = $ListBuild("","hshieidev01-iis.nslijhs.net","hshieqa01-iis.nslijhs.net","","swbshiecvwb01v.nslijhs.net","swbshiecvdb01v.nslijhs.net","","sykphiecvwb01v.nslijhs.net","sykphiecvwb02v.nslijhs.net","swbzhiecvwb01v.nslijhs.net","swbzhiecvwb02v.nslijhs.net","","","","","","") 
+	/*
+		List Positions:
+			1.) hshiedev01
+			2.) hshieidev01
+			3.) hshieqa01
+			4.) hsagstage01
+			5.) hsagstage04a
+			6.) hsagstage04b
+			7.) hsagprod01
+			8.) hsagprod04a
+			9.) hsagprod04b
+			10.) hsagprod04c
+			11.) hsagprod04d
+			12.) hsregstage01
+			13.) hsregprod01
+			14.) hsedgestage01
+			15.) hsedgeprod01
+			16.) hsbusstage01
+			17.) hsbusprod01
+	*/
 	For Index = 1:1:$ListLength(TargetList) {
 		If $ListGet(HSInstallPathList, Index) = "prd" && ('IncludeProduction) continue
 		
-		Set Target = $ListGet(TargetList, Index)
-		Set TargetUrl = Target_".nshs.edu"
+		Set TargetHostName = $ListGet(TargetList, Index)
+		Set AlternateHostUrl = $ListGet(AltHostUrlList, Index)
+		Set TargetHostUrl = TargetHostName_".nshs.edu"
 		
-		If Target [ "stage" || (Target [ "prod") {
-			If Target [ "01" {
+		If TargetHostName [ "stage" || (TargetHostName [ "prod") {
+			If TargetHostName [ "01" {
 				Set DeployPath = "/csp/healthshare/access01/Workbench.SourceControl.Deploy.Input.cls"
+			} ElseIf TargetHostName [ "04a" {
+				Set DeployPath = "/csp/healthshare/access04/Workbench.SourceControl.Deploy.Input.cls"
 			} Else {
 				Set DeployPath = ""
 			}
@@ -1224,19 +1462,20 @@ Northwell-specific default values</Description>
 		}
 		Set Desc = $ListGet(DescList, Index)
 		Set HSInstallPath = "/app01/"_$ListGet(HSInstallPathList, Index)_"/hie/healthshare/"
-		Set Object = ..HostUrlOpen(TargetUrl)
+		Set Object = ..HostUrlOpen(TargetHostUrl)
 		If '$IsObject(Object) {
 			Set Object = ..%New()
 		}
-		Set Object.HostUrl = TargetUrl
-		Set Object.HostName = Target
+		Set Object.HostUrl = TargetHostUrl
+		Set Object.HostName = TargetHostName
 		Set Object.Description = Desc
 		Set Object.HSInstallPath = HSInstallPath
 		Set Object.DefaultHomeDirectory = "/tmp/traklayouts/"
 		Set Object.DeployPath = DeployPath
+		Set Object.AlternateHostUrl = AlternateHostUrl
 		
-		If ##Class(Ens.Config.Credentials).%ExistsId($ZCVT(Target,"U")_"_ADLogin") {
-			Set Object.HSLogin = $ZCVT(Target,"U")_"_ADLogin"
+		If ##Class(Ens.Config.Credentials).%ExistsId($ZCVT(TargetHostName,"U")_"_ADLogin") {
+			Set Object.HSLogin = $ZCVT(TargetHostName,"U")_"_ADLogin"
 		} Else {
 			Set Object.HSLogin = "ADLogin"
 		}
@@ -1282,6 +1521,9 @@ Northwell-specific default values</Description>
 </Value>
 <Value name="9">
 <Value>DeployPath</Value>
+</Value>
+<Value name="10">
+<Value>AlternateHostUrl</Value>
 </Value>
 </Data>
 </Storage>
@@ -3031,9 +3273,10 @@ Prepare the Trak Component layout changes from file and merge</Description>
 </Class>
 
 
-<Project name="HieCOMMONLIBSSHToolsV1" LastModified="2019-02-23 00:03:36.606898">
+<Project name="HieCOMMONLIBSSHToolsV1" LastModified="2020-01-10 23:48:03.990289">
   <Items>
     <ProjectItem name="CUSTOM.CORE.REST.SSHToolUtils" type="CLS"></ProjectItem>
+    <ProjectItem name="CUSTOM.CORE.REST.SessionTokenService" type="CLS"></ProjectItem>
     <ProjectItem name="CUSTOM.CORE.Util.SSHTool.GeneralConfig" type="CLS"></ProjectItem>
     <ProjectItem name="CUSTOM.CORE.Util.SSHTool.Log" type="CLS"></ProjectItem>
     <ProjectItem name="CUSTOM.CORE.Util.SSHTool.TargetConfig" type="CLS"></ProjectItem>

@@ -23,10 +23,12 @@
 <div class='row'>
   <div class='column'>
     <mat-form-field
-          title='Enter "[Healthshare]/filepath/filename.type"
+          title='Enter (with squarebrackets) "[Healthshare]/filepath/filename.type"
                  to indicate the default healthshare installation
                  path for the target environment.
-                 For example, IDEVs install dir is /app01/idev/hie/healthshare.'
+                 For example, IDEVs install dir is /app01/idev/hie/healthshare.
+                 Enter [Namespace] to translate to TargetConfig.DefaultNamespace value.
+                 This is only necessary if destination path includes target-specific namespace.'
           style='width: 100%'>
       <input matInput
               #newDestItem

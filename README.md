@@ -1,5 +1,5 @@
 # SshUtility
-Tool for executing cache terminal commands via SSH and transferring files via SFTP to multiple AIX servers.
+Tool for executing cache terminal commands via SSH, saving and applying traklayout patches, transferring files via SFTP to multiple environments, and has an embedded web terminal for your local instance.
 
 Added custom TrakLayoutPatch save/load feature - This allows users to apply trak layout changes for specific component, context, chart, chart item, transform, icon definition, etc. rather than applying layout changes instance-wide.
 

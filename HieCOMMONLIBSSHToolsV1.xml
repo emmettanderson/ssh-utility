@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2018.1.1 (Build 312_1_18859U)" ts="2020-01-10 23:48:31">
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2018.1.1 (Build 312_1_18859U)" ts="2020-01-23 12:36:19">
 <Class name="CUSTOM.CORE.REST.SSHToolUtils">
 <Super>%CSP.REST</Super>
-<TimeChanged>65388,56587.405552</TimeChanged>
+<TimeChanged>65401,45236.807214</TimeChanged>
 <TimeCreated>65048,58615</TimeCreated>
 
 <Parameter name="HandleCorsRequest">
@@ -43,6 +43,9 @@ This UrlMap maps http requests to the classmethod to which it should be dispatch
 </XData>
 
 <Method name="Submit">
+<Description>
+TO DO: Command line deployments
+w ##class(Workbench.Util.TerminalDeploy).DeployMultiple("ProjectName1,ProjectName2","deploy comment","username","password")</Description>
 <ClassMethod>1</ClassMethod>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
@@ -230,7 +233,7 @@ This UrlMap maps http requests to the classmethod to which it should be dispatch
 			Set ProxyObject.id = TargetObject.%Id()
 			Set ProxyObject.HostName = TargetObject.HostName
 			Set ProxyObject.HostUrl = TargetObject.HostUrl
-			Set ProxObject.AlternateHostUrl = TargetObject.AlternateHostUrl
+			Set ProxyObject.AlternateHostUrl = TargetObject.AlternateHostUrl
 			Set ProxyObject.DeployPath = TargetObject.DeployPath
 			
 			Set Status = ##class(%ZEN.Auxiliary.jsonProvider).%WriteJSONStreamFromObject(tJsonStream,ProxyObject,,,0,"") 
@@ -473,6 +476,7 @@ Need to create credentials on Local AG production for SSHLogin and ADLogin</Desc
 				Continue
 			}
 			Set Target = TargetObject.HostName
+			Set Namespace = TargetObject.DefaultNamespace
 			
 			Set Status = ..GetCredentials(TargetObject, .HSCredentials, .SSHCredentials)
 			If $$$ISERR(Status) {
@@ -500,20 +504,23 @@ Need to create credentials on Local AG production for SSHLogin and ADLogin</Desc
 				#; Move Files 
 				If FromFile '="" && (ToFile'="") {
 					Set zToFile = ToFile
-					
+					/*
 					#; Northwell-specific for multiple AGs
+					Set ToFile = $Replace("")
 					If $Extract($ZCVT(Target,"U"),1,4) = "HSAG" {
 						Set zToFile = $Case(Target["04",
 											1:$Replace(ToFile,"access01","access04"),
 											:$Replace(ToFile,"access04","access01"))
 					}
+					*/
 					
 					#; Replace [Healthshare]/ with defined HSInstallPath
 					Set zToFile = $Replace(zToFile, "[Healthshare]", TargetObject.HSInstallPath)
+					Set zToFile = $Replace(zToFile, "[Namespace]", $ZCVT(TargetObject.DefaultNamespace, "L"))
 					Set zToFile = $Replace(zToFile, "[LayoutDirectory]/", TargetObject.DefaultHomeDirectory)
 					Set zToFile = $Replace(zToFile, "//","/")  // In case user entered "/" before [Healthshare]
 					
-					#; Double-check
+					#; Double-check - Northwell Specific
 					If $Piece(zToFile,"/",2) = "app01" {
 						Set $Piece(zToFile,"/",3) = $Case($Extract(Target,1,6),
 															"HSHIED":"dev",
@@ -550,15 +557,16 @@ Need to create credentials on Local AG production for SSHLogin and ADLogin</Desc
 			
 			#; Check for default directories in commands:
 			Set Command = $Replace(Command, "[Healthshare]/", TargetObject.HSInstallPath)
+			Set Command = $Replace(Command, "[Namespace]", $ZCVT(TargetObject.DefaultNamespace, "L"))
 			Set Command = $Replace(Command, "[LayoutsDirectory]/", TargetObject.DefaultHomeDirectory)
 			Set Command = $Replace(Command, "//","/")  // In case user entered "/" before [Healthshare]
-
+			
 			#; Strip alpha character from AG04 hosts
 			Set Host = $ZCVT(Target,"L")
 			If Host [ "04" Set Host = $Extract(Host,1,$Length(Host) - 1)
 			
-			Set Namespace = $Case(Target [ "01", 1:"ACCESS01", :"ACCESS04")
-			If $ZCVT(Target,"U")'["STAGE" && ($ZCVT(Target,"U")'["PROD") Set Namespace = "ACCESS04"
+			// Set Namespace = $Case(Target [ "01", 1:"ACCESS01", :"ACCESS04")
+			// If $ZCVT(Target,"U")'["STAGE" && ($ZCVT(Target,"U")'["PROD") Set Namespace = "ACCESS04"
 			
 			Set originalCommand = $ListToString(LogObject.CommandStringList," ")
 			If Namespace = "ACCESS01" {
@@ -570,7 +578,7 @@ Need to create credentials on Local AG production for SSHLogin and ADLogin</Desc
 			
 			#; Use HS_Services credentials to run class method for export
 			Set CommandString = "echo '"_HSCredentials.Username_"\n"_HSCredentials.Password_"\n"
-			Set CommandString = CommandString_Command_"' | csession "_Host_" -U "_Namespace
+			Set CommandString = CommandString_Command_"' | csession "_$ZCVT(TargetObject.InstanceName,"U")_" -U "_Namespace
 			
 			Set Command = originalCommand
 			 
@@ -1333,8 +1341,9 @@ Destination Files sent to environments</Description>
 
 
 <Class name="CUSTOM.CORE.Util.SSHTool.TargetConfig">
+<IncludeCode>%occInclude,%sySite</IncludeCode>
 <Super>%Persistent</Super>
-<TimeChanged>65388,58084.616669</TimeChanged>
+<TimeChanged>65400,59751.204835</TimeChanged>
 <TimeCreated>65029,70834</TimeCreated>
 
 <Property name="HostName">
@@ -1400,6 +1409,15 @@ example: /csp/healthshare/access04/Workbench.SourceControl.Deploy.Input.cls</Des
 <Parameter name="MAXLEN" value="32000"/>
 </Property>
 
+<Property name="DefaultNamespace">
+<Type>%String</Type>
+<InitialExpression>"ACCESS04"</InitialExpression>
+</Property>
+
+<Property name="InstanceName">
+<Type>%String</Type>
+</Property>
+
 <Index name="HostUrl">
 <Properties>HostUrl</Properties>
 <Unique>1</Unique>
@@ -1418,11 +1436,118 @@ Northwell-specific default values</Description>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
 	Set Status = $$$OK
-	Set TargetList = $ListBuild("hshiedev01","hshieidev01","hshieqa01","hsagstage01","hsagstage04a","hsagstage04b","hsagprod01","hsagprod04a","hsagprod04b","hsagprod04c","hsagprod04d","hsregstage01","hsregprod01","hsedgestage01","hsedgeprod01","hsbusstage01","hsbusprod01")
-	Set DescList = $ListBuild("HIE DEV Server","HIE IDEV Server","HIE QA Server","Stage01 Access Gateway","Stage04-a Access Gateway","Stage04-b Access Gateway","Prod01 Access Gateway","Prod04-a Access Gateway","Prod04-b Access Gateway","Prod04-c Access Gateway","Prod04-d Access Gateway ","Stage Registry","Prod Registry","Stage Edge","Prod Edge","Stage Bus","Prod Bus")
-	Set HSInstallPathList = $ListBuild("dev","idev","qa","stage","stage","stage","prd","prd","prd","prd","prd","stage","prd","stage","prd","stage","prd")
-	Set AltHostUrlList = $ListBuild("","hshieidev01-iis.nslijhs.net","hshieqa01-iis.nslijhs.net","","swbshiecvwb01v.nslijhs.net","swbshiecvdb01v.nslijhs.net","","sykphiecvwb01v.nslijhs.net","sykphiecvwb02v.nslijhs.net","swbzhiecvwb01v.nslijhs.net","swbzhiecvwb02v.nslijhs.net","","","","","","") 
-	/*
+	Set (TargetList, DescList, HSInstallPath, AltHostUrlList, DefaultNamespaceList, InstanceNameList) = ""
+	Set Index = 0
+	Set $List(TargetList,$I(Index)) = "hshiedev01"
+		Set $List(DescList,Index) = "HIE DEV Server"
+		Set $List(HSInstallPathList,Index) = "dev"
+		Set $List(AltHostUrlList,Index) = ""
+		Set $List(DefaultNamespaceList,Index) = "ACCESS04"
+		
+	Set $List(TargetList,$I(Index)) = "hshieidev01"
+		Set $List(DescList,Index) = "HIE IDEV Server"
+		Set $List(HSInstallPathList,Index) = "idev"
+		Set $List(AltHostUrlList,Index) = "hshieidev01-iis.nslijhs.net"
+		Set $List(DefaultNamespaceList,Index) = "ACCESS04"
+		
+	Set $List(TargetList,$I(Index)) = "hshieqa01"
+		Set $List(DescList,Index) = "HIE QA Server"
+		Set $List(HSInstallPathList,Index) = "qa"
+		Set $List(AltHostUrlList,Index) = "hshieqa01-iis.nslijhs.net"
+		Set $List(DefaultNamespaceList,Index) = "ACCESS04"
+		
+	Set $List(TargetList,$I(Index)) = "hsagstage01"
+		Set $List(DescList,Index) = "Stage01 Access Gateway"
+		Set $List(HSInstallPathList,Index) = "stage"
+		Set $List(AltHostUrlList,Index) = ""
+		Set $List(DefaultNamespaceList,Index) = "ACCESS01"
+		
+	Set $List(TargetList,$I(Index)) = "hsagstage04a"
+		Set $List(DescList,Index) = "Stage04-a Access Gateway"
+		Set $List(HSInstallPathList,Index) = "stage"
+		Set $List(AltHostUrlList,Index) = "swbshiecvwb01v.nslijhs.net"
+		Set $List(DefaultNamespaceList,Index) = "ACCESS04"
+		
+	Set $List(TargetList,$I(Index)) = "hsagstage04b"
+		Set $List(DescList,Index) = "Stage04-b Access Gateway"
+		Set $List(HSInstallPathList,Index) = "stage"
+		Set $List(AltHostUrlList,Index) = "swbshiecvdb01v.nslijhs.net"
+		Set $List(DefaultNamespaceList,Index) = "ACCESS04"
+		
+	Set $List(TargetList,$I(Index)) = "hsagprod01"
+		Set $List(DescList,Index) = "Prod01 Access Gateway"
+		Set $List(HSInstallPathList,Index) = "prd"
+		Set $List(AltHostUrlList,Index) = ""
+		Set $List(DefaultNamespaceList,Index) = "ACCESS01"
+		
+	Set $List(TargetList,$I(Index)) = "hsagprod04a"
+		Set $List(DescList,Index) = "Prod04-a Access Gateway"
+		Set $List(HSInstallPathList,Index) = "prd"
+		Set $List(AltHostUrlList,Index) = "sykphiecvwb01v.nslijhs.net"
+		Set $List(DefaultNamespaceList,Index) = "ACCESS04"
+		
+	Set $List(TargetList,$I(Index)) = "hsagprod04b"
+		Set $List(DescList,Index) = "Prod04-b Access Gateway"
+		Set $List(HSInstallPathList,Index) = "prd"
+		Set $List(AltHostUrlList,Index) = "sykphiecvwb02v.nslijhs.net"
+		Set $List(DefaultNamespaceList,Index) = "ACCESS04"
+		
+	Set $List(TargetList,$I(Index)) = "hsagprod04c"
+		Set $List(DescList,Index) = "Prod04-c Access Gateway"
+		Set $List(HSInstallPathList,Index) = "prd"
+		Set $List(AltHostUrlList,Index) = "swbzhiecvwb01v.nslijhs.net"
+		Set $List(DefaultNamespaceList,Index) = "ACCESS04"
+		
+	Set $List(TargetList,$I(Index)) = "hsagprod04d"
+		Set $List(DescList,Index) = "Prod04-d Access Gateway"
+		Set $List(HSInstallPathList,Index) = "prd"
+		Set $List(AltHostUrlList,Index) = "swbzhiecvwb02v.nslijhs.net"
+		Set $List(DefaultNamespaceList,Index) = "ACCESS04"
+		
+	Set $List(TargetList,$I(Index)) = "hsregstage01"
+		Set $List(DescList,Index) = "Stage Registry"
+		Set $List(HSInstallPathList,Index) = "stage"
+		Set $List(AltHostUrlList,Index) = ""
+		Set $List(DefaultNamespaceList,Index) = "REGISTRY"
+		
+	Set $List(TargetList,$I(Index)) = "hsregprod01"
+		Set $List(DescList,Index) = "Prod Registry"
+		Set $List(HSInstallPathList,Index) = "prd"
+		Set $List(AltHostUrlList,Index) = ""
+		Set $List(DefaultNamespaceList,Index) = "REGISTRY"
+		
+	Set $List(TargetList,$I(Index)) = "hsedgestage01"
+		Set $List(DescList,Index) = "Stage Edge"
+		Set $List(HSInstallPathList,Index) = "stage"
+		Set $List(AltHostUrlList,Index) = ""
+		Set $List(DefaultNamespaceList,Index) = "COMMONLIB"
+		
+	Set $List(TargetList,$I(Index)) = "hsedgeprod01"
+		Set $List(DescList,Index) = "Prod Edge"
+		Set $List(HSInstallPathList,Index) = "prd"
+		Set $List(AltHostUrlList,Index) = ""
+		Set $List(DefaultNamespaceList,Index) = "COMMONLIB"
+		
+	Set $List(TargetList,$I(Index)) = "hsbusstage01"
+		Set $List(DescList,Index) = "Stage Bus"
+		Set $List(HSInstallPathList,Index) = "stage"
+		Set $List(AltHostUrlList,Index) = ""
+		Set $List(DefaultNamespaceList,Index) = "BUS"
+		
+	Set $List(TargetList,$I(Index)) = "hsbusprod01"
+		Set $List(DescList,Index) = "Prod Bus"
+		Set $List(HSInstallPathList,Index) = "prd"
+        Set $List(AltHostUrlList,Index) = ""	
+        Set $List(DefaultNamespaceList,Index) = "BUS"
+	
+	Set $List(TargetList,$I(Index)) = "macdhodsap001v.mid.northwell.edu"
+		Set $List(DescList,Index) = "Azure ODS Dev Environment"
+		Set $List(HSInstallPathList,Index) = "/healthshare/"
+        Set $List(AltHostUrlList,Index) = ""
+        Set $List(DefaultNamespaceList,Index) = "ACCESS07"
+        Set $List(InstanceNameList,Index) = "HSODSDEV01"
+	
+		/*
 		List Positions:
 			1.) hshiedev01
 			2.) hshieidev01
@@ -1441,27 +1566,34 @@ Northwell-specific default values</Description>
 			15.) hsedgeprod01
 			16.) hsbusstage01
 			17.) hsbusprod01
-	*/
+			18.) Azure ODS environment
+		*/
 	For Index = 1:1:$ListLength(TargetList) {
 		If $ListGet(HSInstallPathList, Index) = "prd" && ('IncludeProduction) continue
 		
 		Set TargetHostName = $ListGet(TargetList, Index)
 		Set AlternateHostUrl = $ListGet(AltHostUrlList, Index)
-		Set TargetHostUrl = TargetHostName_".nshs.edu"
-		
-		If TargetHostName [ "stage" || (TargetHostName [ "prod") {
-			If TargetHostName [ "01" {
-				Set DeployPath = "/csp/healthshare/access01/Workbench.SourceControl.Deploy.Input.cls"
-			} ElseIf TargetHostName [ "04a" {
-				Set DeployPath = "/csp/healthshare/access04/Workbench.SourceControl.Deploy.Input.cls"
-			} Else {
-				Set DeployPath = ""
-			}
+		Set DefaultNamespace = $ListGet(DefaultNamespaceList, Index)
+
+		If TargetHostName [ "." {
+			Set TargetHostUrl = TargetHostName
+			Set TargetHostName = $Piece(TargetHostName, ".", 1)
 		} Else {
-			Set DeployPath = "/csp/healthshare/access04/Workbench.SourceControl.Deploy.Input.cls"
+			Set TargetHostUrl = TargetHostName_".nshs.edu"
 		}
+		
+		Set InstanceName = $ListGet(InstanceNameList, Index)
+		If InstanceName = "" {
+			Set InstanceName = TargetHostName	
+		}
+		Set DeployPath = "/csp/healthshare/"_$ZCVT(DefaultNamespace,"L")_"/Workbench.SourceControl.Deploy.Input.cls"
+
 		Set Desc = $ListGet(DescList, Index)
-		Set HSInstallPath = "/app01/"_$ListGet(HSInstallPathList, Index)_"/hie/healthshare/"
+		
+		Set HSInstallPath = $ListGet(HSInstallPathList, Index)
+		If HSInstallPath '[ "/" {
+			Set HSInstallPath = "/app01/"_HSInstallPath_"/hie/healthshare/"
+		}
 		Set Object = ..HostUrlOpen(TargetHostUrl)
 		If '$IsObject(Object) {
 			Set Object = ..%New()
@@ -1473,13 +1605,19 @@ Northwell-specific default values</Description>
 		Set Object.DefaultHomeDirectory = "/tmp/traklayouts/"
 		Set Object.DeployPath = DeployPath
 		Set Object.AlternateHostUrl = AlternateHostUrl
+		Set Object.DefaultNamespace = DefaultNamespace
+		Set Object.InstanceName = InstanceName
 		
 		If ##Class(Ens.Config.Credentials).%ExistsId($ZCVT(TargetHostName,"U")_"_ADLogin") {
 			Set Object.HSLogin = $ZCVT(TargetHostName,"U")_"_ADLogin"
 		} Else {
 			Set Object.HSLogin = "ADLogin"
 		}
-		
+		If ##Class(Ens.Config.Credentials).%ExistsId($ZCVT(TargetHostName,"U")_"_SSHLogin") {
+			Set Object.SSHLogin = $ZCVT(TargetHostName,"U")_"_SSHLogin"
+		} Else {
+			Set Object.SSHLogin = "SSHLogin"
+		}
 		Set Status = Object.%Save()
 		If $$$ISERR(Status) Quit
 	}
@@ -1525,6 +1663,12 @@ Northwell-specific default values</Description>
 <Value name="10">
 <Value>AlternateHostUrl</Value>
 </Value>
+<Value name="11">
+<Value>DefaultNamespace</Value>
+</Value>
+<Value name="12">
+<Value>InstanceName</Value>
+</Value>
 </Data>
 </Storage>
 </Class>
@@ -1532,7 +1676,7 @@ Northwell-specific default values</Description>
 
 <Class name="CUSTOM.CORE.Util.SSHTool.TargetGroupConfig">
 <Super>%Persistent</Super>
-<TimeChanged>65385,69697.517737</TimeChanged>
+<TimeChanged>65400,57339.263203</TimeChanged>
 <TimeCreated>65020,46792</TimeCreated>
 
 <Property name="GroupName">
@@ -1558,10 +1702,15 @@ Default Populate for Northwell Health Implementation - Must Populate ..TargetCon
 <Implementation><![CDATA[
 	Set Status = $$$OK
 	&sql(TRUNCATE Table CUSTOM_CORE_Util_SSHTool.TargetGroupConfig)
-	
-	Set GroupNameList = $ListBuild("Development","IDEV","QA","Stage-AGs","All-Non-Production","Prod-AG-04s","Prod-AGs","Prod-AG-01","Stage-Registry","Prod-Registry","Stage-Edge","Prod-Edge","Stage-Bus","Prod-Bus")
-	Set TargetLists = $ListBuild($ListBuild("HSHIEDEV01","HSHIEIDEV01"),$ListBuild("HSHIEIDEV01"),$ListBuild("HSHIEQA01"),$ListBuild("HSAGSTAGE01","HSAGSTAGE04a","HSAGSTAGE04b"),$ListBuild("HSHIEDEV01","HSHIEIDEV01","HSHIEQA01","HSAGSTAGE01","HSAGSTAGE04a","HSAGSTAGE04b"),$ListBuild("HSAGPROD04a","HSAGPROD04b","HSAGPROD04c","HSAGPROD04d"),$ListBuild("HSAGPROD01","HSAGPROD04a","HSAGPROD04b","HSAGPROD04c","HSAGPROD04d"),$ListBuild("HSAGPROD01"),$ListBuild("HSREGSTAGE01"),$ListBuild("HSREGPROD01"),$ListBuild("HSEDGESTAGE01"),$ListBuild("HSEDGEPROD01"),$ListBuild("HSBUSSTAGE01"),$ListBuild("HSBUSPROD01"))
-	
+	Set TargetList = ""
+	Set Index = 0
+	Set GroupNameList = $ListBuild("Development","Stage-AGs","All-Non-Production","Prod-AG-04s","Prod-AGs")
+	Set $List(TargetLists, $I(Index)) = $ListBuild("HSHIEDEV01","HSHIEIDEV01")
+	Set $List(TargetLists, $I(Index)) = $ListBuild("HSAGSTAGE01","HSAGSTAGE04a","HSAGSTAGE04b")
+	Set $List(TargetLists, $I(Index)) = $ListBuild("HSHIEDEV01","HSHIEIDEV01","HSHIEQA01","HSAGSTAGE01","HSAGSTAGE04a","HSAGSTAGE04b")
+	Set $List(TargetLists, $I(Index)) = $ListBuild("HSAGPROD04a","HSAGPROD04b","HSAGPROD04c","HSAGPROD04d")
+	Set $List(TargetLists, $I(Index)) = $ListBuild("HSAGPROD01","HSAGPROD04a","HSAGPROD04b","HSAGPROD04c","HSAGPROD04d")
+
 	For Index = 1:1:$ListLength(GroupNameList) {
 		Set GroupName = $ListGet(GroupNameList, Index)_" Environment(s)"
 		If $Piece(GroupName,"-",1) = "Prod" && ('IncludeProduction) Continue
@@ -1576,8 +1725,8 @@ Default Populate for Northwell Health Implementation - Must Populate ..TargetCon
 		
 		For tIndex = 1:1:$ListLength(TargetList) {
 			Set Target = $ListGet(TargetList, tIndex)
-			Set Target = $ZCVT(Target,"L")_".nshs.edu"
-			Set TargetObject = ##Class(CUSTOM.CORE.Util.SSHTool.TargetConfig).HostUrlOpen(Target)
+			
+			Set TargetObject = ##Class(CUSTOM.CORE.Util.SSHTool.TargetConfig).HostNameOpen($ZCVT(Target, "L"))
 			If '$IsObject(TargetObject) Continue
 		
 			Set Status = GroupObject.TargetList.Insert(TargetObject)
@@ -1586,6 +1735,32 @@ Default Populate for Northwell Health Implementation - Must Populate ..TargetCon
 		Set Status = GroupObject.%Save()
 		If $$$ISERR(Status) Quit
 	}
+	#; Create individual target groups for all environments
+	&SQL(
+		DECLARE GetTargetList CURSOR FOR
+		SELECT ID 
+		FROM CUSTOM_CORE_Util_SSHTool.TargetConfig 
+		Order By Description ASC
+	)
+	
+	&SQL(OPEN GetTargetList)
+	
+	For {
+		&SQL(FETCH GetTargetList INTO :RowId)
+		If SQLCODE Quit
+		Set TargetObject = ##Class(CUSTOM.CORE.Util.SSHTool.TargetConfig).%OpenId(RowId)
+		If '$IsObject(TargetObject) Continue
+		
+		Set GroupName = TargetObject.Description
+		Set GroupObject = ..GroupNameOpen(GroupName)
+		If '$IsObject(GroupObject) {
+			Set GroupObject = ..%New()
+		}
+		Set GroupObject.GroupName = GroupName
+		Set Status = GroupObject.TargetList.Insert(TargetObject)
+		Set Status = GroupObject.%Save()	 		
+	}
+	&SQL(CLOSE GetTargetList)
 	Quit Status
 ]]></Implementation>
 </Method>

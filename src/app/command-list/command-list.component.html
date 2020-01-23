@@ -3,6 +3,12 @@
       <span class='compcaption'>Cache Terminal Commands</span>
     <mat-form-field style='width: 100%'>
         <input matInput
+                title='Enter (with squarebrackets) "[Healthshare]/filepath/filename.type"
+                to indicate the default healthshare installation
+                path for the target environment.
+                For example, IDEVs install dir is /app01/idev/hie/healthshare.
+                Enter [Namespace] to translate to TargetConfig.DefaultNamespace value.
+                This is only necessary if command string includes target-specific namespace.'
                 placeholder='SSH Command'
                 #newitem (keyup.enter)='checkSyntax(newitem)'
                 newitem.value=''
